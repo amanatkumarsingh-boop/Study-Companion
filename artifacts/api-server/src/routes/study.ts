@@ -44,10 +44,19 @@ router.post("/class", async (req, res) => {
 
   try {
     const content = await generateJSON(
-      `You are an AI study assistant. Analyze this class transcript and return a JSON object with exactly these fields:
-- "summary": a concise 3-5 sentence executive summary of the class
-- "notes": well-structured study notes in plain text with clear sections
-- "questions": 5-7 important exam-style questions based on the content
+      `You are an AI study assistant specializing in processing bilingual Hinglish lecture content — a natural mixture of Hindi and English words written in Roman script (e.g. "yeh concept bahut important hai", "loop condition kaise kaam karta hai").
+
+BILINGUAL PROCESSING RULES:
+- Analyze the full semantic meaning of mixed Hindi/English phrases fluidly. Never skip or misparse a sentence because it contains Hindi words.
+- Treat Hindi grammatical filler words (such as "hai", "kuch", "kya", "karne", "yeh", "toh", "aur", "woh", "matlab", "basically", "agar", "jab", "tab") as connective tissue only — do not treat them as subject keywords or technical terms.
+- Identify and isolate the genuine technical English terms (e.g. "PostgreSQL", "React Hooks", "Loop Conditions", "API", "recursion") as the high-yield topic keywords.
+- Translate all conceptual ideas internally from Hinglish into clean academic English before generating any output.
+
+OUTPUT RULES — ALL OUTPUT MUST BE IN ENGLISH ONLY:
+Return a JSON object with exactly these fields:
+- "summary": a concise 3-5 sentence executive summary of the class, written in clean academic English
+- "notes": well-structured study notes in plain text with clear sections, written in clean academic English
+- "questions": 5-7 important exam-style questions based on the content, written in clean academic English
 
 Transcript:
 ${transcript}`
@@ -73,9 +82,18 @@ router.post("/prep", async (req, res) => {
 
   try {
     const content = await generateJSON(
-      `You are an AI study assistant. Analyze this text and return a JSON object with exactly these fields:
-- "summary": a concise 3-5 sentence summary of the material
-- "questions": 5-8 predicted exam questions a professor might ask based on this content
+      `You are an AI study assistant specializing in processing bilingual Hinglish study material — a natural mixture of Hindi and English words written in Roman script (e.g. "yeh concept bahut important hai", "loop condition kaise kaam karta hai").
+
+BILINGUAL PROCESSING RULES:
+- Analyze the full semantic meaning of mixed Hindi/English phrases fluidly. Never skip or misparse a sentence because it contains Hindi words.
+- Treat Hindi grammatical filler words (such as "hai", "kuch", "kya", "karne", "yeh", "toh", "aur", "woh", "matlab", "basically", "agar", "jab", "tab") as connective tissue only — do not treat them as subject keywords or technical terms.
+- Identify and isolate the genuine technical English terms (e.g. "PostgreSQL", "React Hooks", "Loop Conditions", "API", "recursion") as the high-yield topic keywords.
+- Translate all conceptual ideas internally from Hinglish into clean academic English before generating any output.
+
+OUTPUT RULES — ALL OUTPUT MUST BE IN ENGLISH ONLY:
+Return a JSON object with exactly these fields:
+- "summary": a concise 3-5 sentence summary of the material, written in clean academic English
+- "questions": 5-8 predicted exam questions a professor might ask based on this content, written in clean academic English
 
 Text:
 ${text}`
