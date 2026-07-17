@@ -1,0 +1,17 @@
+Please completely overhaul the audio tracking logic and frontend state listeners inside 'src/App.jsx' and the prompt logic inside 'server.js' to fix BOTH the silent microphone freezing issue and the phonetic word mishearing bug in one go. Ensure all code blocks are fully updated without truncation.
+
+---
+
+### 1. FRONTEND: SPEECH ENGINE SYNCHRONIZATION & AUTO-RESTART LOOP ('src/App.jsx')
+- Refactor the ClassMode and DoubtMode speech engine lifecycles. Do not rely on a generic boolean button state to toggle the UI tracking metrics.
+- Bind the flashing banner layout ("🎙️ Live Listening...") and the canvas animation render frame loop directly to the native browser 'recognition.onstart' and 'recognition.onend' hooks. The application UI must only indicate it is active when the browser audio thread is physically open and transcribing.
+- Inside the 'recognition.onend' event listener, add a secure auto-restart guard block: if the user hasn't explicitly clicked the end/stop session button, immediately call 'recognition.start()' wrapped in a try/catch safeguard block to instantly wake the stream up if the browser forces a silent timeout.
+- Implement an activity watchdog timer: if the transcript accumulator doesn't capture a new word token within 40 seconds while recording is active, automatically trigger a quick background cycle ('recognition.stop()' followed immediately by 'recognition.start()') to seamlessly unfreeze any stalled browser threads.
+- If a hard permission or hardware error occurs, catch it in 'recognition.onerror', gracefully clear the canvas wave state, and reset the main interactive trigger button back to its default solid color layout so the user is never left guessing.
+
+---
+
+### 2. BACKEND: PHONETIC REPAIR LAYER FOR CLASS LECTURES ('server.js')
+- Update the system instructions passed to the 'gemini-2.5-flash' model inside the 'POST /api/class' route pipeline.
+- Explicitly instruct the Gemini model: "The incoming text payload is raw output from a live browser speech-to-text recognition engine. It WILL contain major phonetic errors, accidental accent mishearings, and garbled technical words due to hardware streaming limitations. You must use the deep surrounding academic context of the lecture to automatically identify and phonetically repair these terms before drafting your final output notes. For example, if the global topic is chemistry/science and the text reads 'hello alien', automatically fix it to 'haloalkene'; if it reads 'post grace', fix it to 'PostgreSQL'."
+- Ensure the underlying output rule remains strictly binding: after running the contextual phonetic repair layer, generate the complete academic package tracking the 'summary', 'notes', 'formulas', and 'questions' entirely in clean, pristine English.

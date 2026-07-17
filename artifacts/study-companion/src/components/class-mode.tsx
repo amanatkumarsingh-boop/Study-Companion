@@ -5,7 +5,8 @@ import { cn } from '@/lib/utils';
 import { Mic, Square, Loader2, Sparkles, Target, Quote, FlaskConical } from 'lucide-react';
 
 export function ClassMode() {
-  const [isRecording, setIsRecording] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);       // audio stream open (user intent)
+  const [isRecognitionActive, setIsRecognitionActive] = useState(false); // browser thread physically open
   const [transcript, setTranscript] = useState('');
   const [result, setResult] = useState<any>(null);
 
@@ -17,49 +18,15 @@ export function ClassMode() {
   const streamRef = useRef<MediaStream | null>(null);
   const animFrameRef = useRef<number | null>(null);
 
+  // Guards
+  const isUserStoppingRef = useRef(false);
+  const lastWordTimeRef = useRef<number>(0);
+  const watchdogRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   const queryClient = useQueryClient();
   const processClass = useProcessClass();
 
-  // Set up SpeechRecognition on mount
-  useEffect(() => {
-    const SpeechRecognition =
-      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (SpeechRecognition) {
-      const recognition = new SpeechRecognition();
-      recognition.continuous = true;
-      recognition.interimResults = true;
-      // Indian English / Hinglish locale for best mixed-language capture
-      recognition.lang = navigator.language || 'en-IN';
-      recognition.onresult = (event: any) => {
-        let finalTranscript = '';
-        for (let i = event.resultIndex; i < event.results.length; ++i) {
-          if (event.results[i].isFinal) {
-            finalTranscript += event.results[i][0].transcript;
-          }
-        }
-        if (finalTranscript) setTranscript((prev) => prev + ' ' + finalTranscript);
-      };
-      recognition.onerror = (event: any) => {
-        console.error('Speech recognition error', event.error);
-      };
-      recognitionRef.current = recognition;
-    }
-    return () => { if (recognitionRef.current) recognitionRef.current.stop(); };
-  }, []);
-
-  // Keep canvas dimensions synced with CSS size
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const observer = new ResizeObserver(() => {
-      canvas.width = canvas.offsetWidth;
-      canvas.height = canvas.offsetHeight;
-    });
-    observer.observe(canvas);
-    canvas.width = canvas.offsetWidth;
-    canvas.height = canvas.offsetHeight;
-    return () => observer.disconnect();
-  }, []);
+  // ─── Canvas helpers ──────────────────────────────────────────────────────────
 
   const drawFlatLine = useCallback(() => {
     const canvas = canvasRef.current;
@@ -76,10 +43,6 @@ export function ClassMode() {
     ctx.stroke();
     ctx.globalAlpha = 1;
   }, []);
-
-  useEffect(() => {
-    if (!isRecording) drawFlatLine();
-  }, [isRecording, drawFlatLine]);
 
   const drawWaveform = useCallback(() => {
     const canvas = canvasRef.current;
@@ -113,6 +76,28 @@ export function ClassMode() {
     draw();
   }, []);
 
+  // ─── Canvas resize sync ───────────────────────────────────────────────────────
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const observer = new ResizeObserver(() => {
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+    });
+    observer.observe(canvas);
+    canvas.width = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+    return () => observer.disconnect();
+  }, []);
+
+  // Draw flat line when stream is not active
+  useEffect(() => {
+    if (!isRecording) drawFlatLine();
+  }, [isRecording, drawFlatLine]);
+
+  // ─── Audio teardown ───────────────────────────────────────────────────────────
+
   const stopAudio = useCallback(() => {
     if (animFrameRef.current !== null) {
       cancelAnimationFrame(animFrameRef.current);
@@ -128,11 +113,104 @@ export function ClassMode() {
     drawFlatLine();
   }, [drawFlatLine]);
 
+  // ─── Watchdog helpers ─────────────────────────────────────────────────────────
+
+  const clearWatchdog = useCallback(() => {
+    if (watchdogRef.current !== null) {
+      clearInterval(watchdogRef.current);
+      watchdogRef.current = null;
+    }
+  }, []);
+
+  const startWatchdog = useCallback(() => {
+    clearWatchdog();
+    lastWordTimeRef.current = Date.now();
+    watchdogRef.current = setInterval(() => {
+      if (isUserStoppingRef.current) return;
+      if (Date.now() - lastWordTimeRef.current > 40_000) {
+        // Silently cycle the recognition to unfreeze the browser audio thread
+        lastWordTimeRef.current = Date.now(); // reset before cycle to avoid rapid loops
+        try { recognitionRef.current?.stop(); } catch { /* ignore */ }
+        setTimeout(() => {
+          if (!isUserStoppingRef.current) {
+            try { recognitionRef.current?.start(); } catch { /* ignore */ }
+          }
+        }, 300);
+      }
+    }, 5_000);
+  }, [clearWatchdog]);
+
+  // ─── SpeechRecognition setup ──────────────────────────────────────────────────
+
+  useEffect(() => {
+    const SpeechRecognition =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = navigator.language || 'en-IN';
+
+    // ── Bound directly to browser audio thread lifecycle ──
+    recognition.onstart = () => {
+      setIsRecognitionActive(true);
+    };
+
+    recognition.onend = () => {
+      setIsRecognitionActive(false);
+      // Auto-restart guard: wake the stream back up unless the user explicitly stopped
+      if (!isUserStoppingRef.current) {
+        try { recognition.start(); } catch { /* browser may reject; watchdog will retry */ }
+      }
+    };
+
+    recognition.onresult = (event: any) => {
+      let finalTranscript = '';
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        if (event.results[i].isFinal) {
+          finalTranscript += event.results[i][0].transcript;
+        }
+      }
+      if (finalTranscript) {
+        lastWordTimeRef.current = Date.now(); // reset watchdog clock
+        setTranscript((prev) => prev + ' ' + finalTranscript);
+      }
+    };
+
+    recognition.onerror = (event: any) => {
+      const hard = ['not-allowed', 'audio-capture', 'service-not-allowed'];
+      if (hard.includes(event.error)) {
+        // Hard error: stop everything and reset UI to default state
+        isUserStoppingRef.current = true;
+        clearWatchdog();
+        stopAudio();
+        setIsRecording(false);
+        setIsRecognitionActive(false);
+        console.error('Speech recognition hard error:', event.error);
+      }
+      // Transient errors (no-speech, network) are handled by onend → auto-restart
+    };
+
+    recognitionRef.current = recognition;
+    return () => {
+      isUserStoppingRef.current = true;
+      try { recognition.stop(); } catch { /* ignore */ }
+    };
+  }, [clearWatchdog, stopAudio]);
+
+  // ─── Toggle recording ─────────────────────────────────────────────────────────
+
   const toggleRecording = async () => {
     if (isRecording) {
-      if (recognitionRef.current) recognitionRef.current.stop();
+      // ── Explicit user stop ──
+      isUserStoppingRef.current = true;
+      clearWatchdog();
+      try { recognitionRef.current?.stop(); } catch { /* ignore */ }
       stopAudio();
       setIsRecording(false);
+      setIsRecognitionActive(false);
+
       if (transcript.trim()) {
         processClass.mutate(
           { data: { transcript } },
@@ -145,6 +223,8 @@ export function ClassMode() {
         );
       }
     } else {
+      // ── Start session ──
+      isUserStoppingRef.current = false;
       setTranscript('');
       setResult(null);
       try {
@@ -159,10 +239,11 @@ export function ClassMode() {
         analyserRef.current = analyser;
         source.connect(analyser);
         drawWaveform();
-        if (recognitionRef.current) {
-          try { recognitionRef.current.start(); } catch { /* already started */ }
-        }
+
         setIsRecording(true);
+        startWatchdog();
+
+        try { recognitionRef.current?.start(); } catch { /* already started */ }
       } catch (err) {
         console.error('Microphone access denied:', err);
         alert('Microphone access was denied. Please allow microphone permissions and try again.');
@@ -170,9 +251,18 @@ export function ClassMode() {
     }
   };
 
+  // ─── Cleanup on unmount ───────────────────────────────────────────────────────
+
   useEffect(() => {
-    return () => { stopAudio(); if (recognitionRef.current) recognitionRef.current.stop(); };
-  }, [stopAudio]);
+    return () => {
+      isUserStoppingRef.current = true;
+      clearWatchdog();
+      stopAudio();
+      try { recognitionRef.current?.stop(); } catch { /* ignore */ }
+    };
+  }, [stopAudio, clearWatchdog]);
+
+  // ─── Render ───────────────────────────────────────────────────────────────────
 
   return (
     <div className="flex flex-col gap-8 animate-reveal">
@@ -182,8 +272,8 @@ export function ClassMode() {
       </div>
 
       <div className="relative rounded-3xl border border-border bg-card p-8 flex flex-col items-center justify-center overflow-hidden shadow-2xl gap-6">
-        {/* Pulsing live banner */}
-        {isRecording && (
+        {/* Banner bound to isRecognitionActive — only shown when browser thread is physically open */}
+        {isRecognitionActive && (
           <div className="absolute top-0 inset-x-0 bg-[#EF4444]/10 border-b border-[#EF4444]/30 py-2 px-4 flex items-center justify-center gap-2">
             <span className="w-2 h-2 rounded-full bg-[#EF4444] animate-pulse" />
             <span className="text-xs font-bold tracking-widest uppercase text-[#EF4444]">🎙️ Live Listening...</span>
@@ -218,7 +308,7 @@ export function ClassMode() {
             : 'Tap to begin recording'}
         </p>
 
-        {/* Waveform canvas */}
+        {/* Waveform canvas — driven by audio stream */}
         <div className="w-full relative z-10">
           <canvas
             ref={canvasRef}

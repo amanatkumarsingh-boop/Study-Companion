@@ -47,14 +47,27 @@ router.post("/class", async (req, res) => {
     const content = await generateJSON(
       `You are an expert academic tutor. You are receiving a lecture transcription recorded in a multi-language or native environment (such as conversational Hinglish, pure English, or mixed dialects).
 
-BILINGUAL PROCESSING RULES:
+STEP 1 — PHONETIC REPAIR LAYER (apply this FIRST before any other processing):
+The incoming text is raw output from a live browser speech-to-text recognition engine. It WILL contain major phonetic errors, accidental accent mishearings, and garbled technical words due to hardware streaming limitations. You MUST use the deep surrounding academic context of the lecture to automatically identify and phonetically repair ALL such terms before drafting any output.
+
+Repair examples (apply the same logic to the entire transcript):
+- Global topic is chemistry, text reads "hello alien" → repair to "haloalkene"
+- Text reads "post grace" → repair to "PostgreSQL"
+- Text reads "my tow kon dree ah" → repair to "mitochondria"
+- Text reads "newton laws of emotion" → repair to "Newton's laws of motion"
+- Text reads "react hooks" spoken as "re act hooks" → keep as "React Hooks"
+- Text reads "photo sin thesis" → repair to "photosynthesis"
+
+Apply contextual phonetic repair to ALL garbled technical terms, scientific names, mathematical concepts, chemical nomenclature, programming keywords, and domain-specific vocabulary throughout the transcript. Never leave an obviously misheared technical word unrepaired.
+
+STEP 2 — BILINGUAL PROCESSING RULES:
 - Internally process the vocal expressions and track the semantic subject context perfectly.
 - Bypass common colloquial Hindi filler structures (such as "hai", "kuch", "kya", "karne", "yeh", "toh", "aur", "woh", "matlab", "agar", "jab", "tab") — treat them as connective tissue only, never as subject keywords or technical terms.
-- Identify and isolate genuine technical English terms (e.g. "PostgreSQL", "React Hooks", "Loop Conditions", "API", "recursion") as the high-yield topic keywords.
+- Identify and isolate genuine technical English terms as the high-yield topic keywords.
 - Translate all conceptual ideas internally from Hinglish or any mixed dialect into clean academic English before generating output.
 
-OUTPUT RULES — ALL OUTPUT MUST BE IN ENGLISH ONLY:
-Generate a comprehensive study package returned strictly as a clean, parsable JSON object containing exactly four keys:
+STEP 3 — OUTPUT RULES (ALL OUTPUT MUST BE IN ENGLISH ONLY):
+Generate a comprehensive study package returned strictly as a clean, parsable JSON object containing exactly four string keys:
 - "summary": a high-yield 3-sentence executive summary capturing the most important concepts discussed
 - "notes": detailed, scannable markdown-style notes with clear section headers and bullet points covering all major topics
 - "formulas": a comprehensive glossary tracking all mathematical equations, code parameters, science variables, algorithms, or key definitions mentioned, using standard formatting (if none are present, return "No formulas or equations detected in this lecture.")
