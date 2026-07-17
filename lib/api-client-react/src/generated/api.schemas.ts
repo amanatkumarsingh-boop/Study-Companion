@@ -57,17 +57,24 @@ export interface FactCheckResult {
   content: FactCheckContent;
 }
 
-/**
- * JSON content depending on mode
- */
-export type HistoryEntryContent = { [key: string]: unknown };
+export interface HistoryContent {
+  /** @nullable */
+  summary?: string | null;
+  /** @nullable */
+  notes?: string | null;
+  /** @nullable */
+  questions?: string | null;
+  /** @nullable */
+  verdict?: string | null;
+  /** @nullable */
+  explanation?: string | null;
+}
 
 export interface HistoryEntry {
   id: number;
   /** One of class, prep, factcheck */
   mode: string;
-  /** JSON content depending on mode */
-  content: HistoryEntryContent;
+  content: HistoryContent;
   /**
      * For factcheck entries only
      * @nullable

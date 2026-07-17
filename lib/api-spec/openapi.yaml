@@ -238,6 +238,20 @@ components:
         content:
           $ref: "#/components/schemas/FactCheckContent"
 
+    HistoryContent:
+      type: object
+      properties:
+        summary:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        questions:
+          type: ["string", "null"]
+        verdict:
+          type: ["string", "null"]
+        explanation:
+          type: ["string", "null"]
+
     HistoryEntry:
       type: object
       required: [id, mode, content, created_at]
@@ -248,8 +262,7 @@ components:
           type: string
           description: One of class, prep, factcheck
         content:
-          type: object
-          description: JSON content depending on mode
+          $ref: "#/components/schemas/HistoryContent"
         verdict:
           type: ["string", "null"]
           description: For factcheck entries only

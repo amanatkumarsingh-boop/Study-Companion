@@ -82,9 +82,13 @@ export const ProcessFactCheckResponse = zod.object({
 export const GetHistoryResponseItem = zod.object({
   "id": zod.number(),
   "mode": zod.string().describe('One of class, prep, factcheck'),
-  "content": zod.looseObject({
-
-}).describe('JSON content depending on mode'),
+  "content": zod.object({
+  "summary": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "questions": zod.string().nullish(),
+  "verdict": zod.string().nullish(),
+  "explanation": zod.string().nullish()
+}),
   "verdict": zod.string().nullish().describe('For factcheck entries only'),
   "created_at": zod.coerce.date()
 })

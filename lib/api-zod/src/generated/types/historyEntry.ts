@@ -5,14 +5,13 @@
  * AI Study Companion API
  * OpenAPI spec version: 0.1.0
  */
-import type { HistoryEntryContent } from './historyEntryContent';
+import type { HistoryContent } from './historyContent';
 
 export interface HistoryEntry {
   id: number;
   /** One of class, prep, factcheck */
   mode: string;
-  /** JSON content depending on mode */
-  content: HistoryEntryContent;
+  content: HistoryContent;
   /**
      * For factcheck entries only
      * @nullable
