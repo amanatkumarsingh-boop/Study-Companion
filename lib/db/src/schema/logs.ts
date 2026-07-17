@@ -4,7 +4,7 @@ import { z } from "zod/v4";
 
 export const logsTable = pgTable("logs", {
   id: serial("id").primaryKey(),
-  mode: text("mode").notNull(), // "class" | "prep" | "factcheck"
+  mode: text("mode").notNull(), // "class" | "prep" | "factcheck" | "doubt"
   content: jsonb("content").notNull(),
   verdict: text("verdict"), // only set for factcheck
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

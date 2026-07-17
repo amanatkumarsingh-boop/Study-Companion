@@ -21,6 +21,7 @@ export interface ClassInput {
 export interface ClassContent {
   summary: string;
   notes: string;
+  formulas: string;
   questions: string;
 }
 
@@ -57,22 +58,39 @@ export interface FactCheckResult {
   content: FactCheckContent;
 }
 
+export interface DoubtInput {
+  /** @minLength 1 */
+  query: string;
+}
+
+export interface DoubtContent {
+  answer: string;
+}
+
+export interface DoubtResult {
+  content: DoubtContent;
+}
+
 export interface HistoryContent {
   /** @nullable */
   summary?: string | null;
   /** @nullable */
   notes?: string | null;
   /** @nullable */
+  formulas?: string | null;
+  /** @nullable */
   questions?: string | null;
   /** @nullable */
   verdict?: string | null;
   /** @nullable */
   explanation?: string | null;
+  /** @nullable */
+  answer?: string | null;
 }
 
 export interface HistoryEntry {
   id: number;
-  /** One of class, prep, factcheck */
+  /** One of class, prep, factcheck, doubt */
   mode: string;
   content: HistoryContent;
   /**

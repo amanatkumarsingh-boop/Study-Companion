@@ -9,7 +9,7 @@ import type { HistoryContent } from './historyContent';
 
 export interface HistoryEntry {
   id: number;
-  /** One of class, prep, factcheck */
+  /** One of class, prep, factcheck, doubt */
   mode: string;
   content: HistoryContent;
   /**

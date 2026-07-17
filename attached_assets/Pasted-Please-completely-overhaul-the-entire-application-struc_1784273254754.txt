@@ -1,0 +1,42 @@
+Please completely overhaul the entire application structure by generating and refactoring 'package.json', 'db.js', 'server.js', and 'src/App.jsx' to form a cohesive, production-ready full-stack application. Ensure all codebase blocks are fully written out with zero truncation, placeholders, or missing hooks so the application runs immediately inside the Replit workspace.
+
+---
+
+### 1. PACKAGE & DEPENDENCY SYSTEM (package.json)
+Create the project dependencies framework specifying Node >= 18. Include:
+- `express` (routing engine)
+- `cors` (cross-origin validation)
+- `dotenv` (environment configuration management)
+- `pg` (PostgreSQL client pool interface)
+- `@google/generative-ai` (Official Google Gemini SDK client)
+Set the main execution script to 'server.js'.
+
+---
+
+### 2. EXPANDED DATABASE PERSISTENCE (db.js)
+Provide the full pool configuration pointing securely to `process.env.DATABASE_URL`. Refactor the `initializeDatabase()` script:
+- Update the 'history' table setup so the CHECK constraint validation explicitly includes the new Doubt mode: `CHECK (mode IN ('class', 'prep', 'factcheck', 'doubt'))`.
+- Keep the `content` data mapping targeted to a flexible JSONB column schema layout to hold custom payloads natively, accompanied by an optimized index tracking `created_at DESC`.
+
+---
+
+### 3. LIVE GEMINI 2.5 FLASH BACKEND CORE (server.js)
+Completely wipe out all simple mock or placeholder string-slicing functions. Initialize the Google Gen AI client using `process.env.GEMINI_API_KEY`, referencing the ultra-fast `gemini-2.5-flash` model. Wrap all route architectures inside highly secure try/catch routines handling text streams and error diagnostics seamlessly:
+
+- **POST /api/class (Language-Independent Finalizer):** Collects the complete transcript payload. Pass it straight to Gemini with specific system rules: *"You are an expert academic tutor. You are receiving a lecture transcription recorded in a multi-language or native environment (such as conversational Hinglish, pure English, or mixed dialects). Internally process the vocal expressions, track the semantic subject context perfectly, and bypass common colloquial Hindi filler structures. Generate a comprehensive study package returned strictly as a clean, parsable JSON object containing four explicit keys in clear English: 'summary' (a high-yield 3-sentence summary), 'notes' (detailed scannable markdown notes), 'formulas' (a comprehensive glossary layout tracking mathematical equations, code parameters, or science variables using standard formatting), and 'questions' (a numbered list of 5-10 high-probability exam evaluation questions complete with deep step-by-step answers)."* Save results to the database pool.
+- **POST /api/prep (Study Link / Document Processor):** Intercepts inputs to build educational summaries. Prompt Gemini to extract core themes out of bilingual/Hinglish texts or transcripts and return a clean JSON payload mapping two primary parameters in complete English: 'summary' (a comprehensive topic breakdown) and 'questions' (a structured bank of predicted exam/PYQ style questions).
+- **POST /api/factcheck (Factual Validation Radar):** Cross-checks user inputs against verified global information indices. Prompt Gemini to return a structural JSON output tracking exactly two properties: 'verdict' (must evaluate strictly to either 'CORRECT' or 'FALSE') and 'explanation' (a targeted breakdown exposing logic fallacies or media manipulations).
+- **POST /api/doubt (The New Language-Independent Assistant):** Build this brand-new API endpoint route. Take the user's spoken or written text query and prompt Gemini: *"The user has an educational query written or spoken in their language of choice (including mixed scripts, Hindi, or global languages). Analyze the underlying context, translate/process the core concepts on the fly, and return a clean JSON object containing an 'answer' block structured perfectly in clear, concise English."* Secure the output inside the PostgreSQL logs history table.
+- **GET /api/history:** Serve consolidated rows fetched dynamically from the database to populate a historical feed view.
+
+---
+
+### 4. IMMERSIVE DARK UI, AUDIO CONTROLS & ANIMATIONS (src/App.jsx)
+Provide a complete, single-file React client workspace utilizing clean hooks and state handlers built inside a rich dark-mode theme structure:
+- **Premium Aesthetics & Navigation:** Set the core page environment background to a solid Premium Midnight Black (`bg-[#0B0F19]`) with inner interactive component wrappers utilizing Matte Slate (`bg-[#1E293B]`). Replace the top tab header with an elegant, persistent bottom navigation bar. Add a 4th tab labeled "Doubt" using a bright, pulsing Electric Amber accent theme color (`#F59E0B`). Maintain active color indicators across the bar: Emerald Green (`#10B981`) for Class, Electric Violet (`#8B5CF6`) for Prep, and Cyber Cyan (`#06B6D4`) for Fact Check.
+- **Microphone Locale & Dynamic Toggles (Class Mode):** Configure the native browser speech recognition engine inside 'startClass' to look directly at the user's universal browser configuration (`navigator.language`) or implement a fallback toggle to explicitly enforce an Indian English/Hinglish locale accent (`recognition.lang = 'en-IN'`). This ensures the app successfully captures mixed phrases without losing context. When active, morph the green button into a dynamic crimson red (`bg-[#EF4444]`) "End Class" button accompanied by a pulsing `"🎙️ Live Listening..."` tracking header banner.
+- **Live Canvas Audio Waveform Visualizer:** Embed an HTML5 `<canvas>` component inside the active status block for BOTH Class and Doubt voice interfaces. Setup a native browser `AudioContext` linked to an `AnalyserNode` (FFT size 2048). Using a recursive `requestAnimationFrame` render loop, capture active voice amplitude values via `getByteTimeDomainData` and draw a vibrant, responsive wave across the horizontal line in Emerald Green (`#10B981`). If mic audio cuts off or drops out, render a perfectly flat static line so users have immediate confirmation of hardware silence.
+- **Doubt Input Interface:** Design the workspace card with an explicit input field labeled "Type or Speak Your Doubt". Provide both a text field area and an active browser voice capture button feeding the dynamic canvas waveform view. On submit, route queries to `/api/doubt` and load the resulting answer card smoothly.
+- **Immersive Fullscreen Offline State:** Intercept the workspace interface when `navigator.onLine` reads as false. Overlay a full-screen screen layout matching `bg-[#0B0F19]`. Render a bright neon-red connectivity error icon, a bold `"You're Offline"` title block, and clear guidance text: `"Please check your internet connection to continue using Class, Preparation, Fact Check, or Doubt modes."` Provide a clear active backdoor bypass pathway button so the user can freely minimize the warning block to view their past study package notes directly out of the "Recent Logs" PostgreSQL history view vault.
+
+Assemble all components seamlessly, establish clean data routing parameters between endpoints, and ensure no lines of code or hooks are truncated.

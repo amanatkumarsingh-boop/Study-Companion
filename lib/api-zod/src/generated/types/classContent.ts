@@ -9,5 +9,6 @@
 export interface ClassContent {
   summary: string;
   notes: string;
+  formulas: string;
   questions: string;
 }

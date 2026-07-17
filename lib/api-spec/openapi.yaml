@@ -123,6 +123,38 @@ paths:
               schema:
                 $ref: "#/components/schemas/ApiError"
 
+  /doubt:
+    post:
+      operationId: processDoubt
+      tags: [study]
+      summary: Answer a student doubt
+      description: Submit a spoken or written doubt query in any language and receive a clear English answer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DoubtInput"
+      responses:
+        "200":
+          description: Doubt answered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DoubtResult"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
   /history:
     get:
       operationId: getHistory
@@ -173,11 +205,13 @@ components:
 
     ClassContent:
       type: object
-      required: [summary, notes, questions]
+      required: [summary, notes, formulas, questions]
       properties:
         summary:
           type: string
         notes:
+          type: string
+        formulas:
           type: string
         questions:
           type: string
@@ -238,6 +272,28 @@ components:
         content:
           $ref: "#/components/schemas/FactCheckContent"
 
+    DoubtInput:
+      type: object
+      required: [query]
+      properties:
+        query:
+          type: string
+          minLength: 1
+
+    DoubtContent:
+      type: object
+      required: [answer]
+      properties:
+        answer:
+          type: string
+
+    DoubtResult:
+      type: object
+      required: [content]
+      properties:
+        content:
+          $ref: "#/components/schemas/DoubtContent"
+
     HistoryContent:
       type: object
       properties:
@@ -245,11 +301,15 @@ components:
           type: ["string", "null"]
         notes:
           type: ["string", "null"]
+        formulas:
+          type: ["string", "null"]
         questions:
           type: ["string", "null"]
         verdict:
           type: ["string", "null"]
         explanation:
+          type: ["string", "null"]
+        answer:
           type: ["string", "null"]
 
     HistoryEntry:
@@ -260,7 +320,7 @@ components:
           type: integer
         mode:
           type: string
-          description: One of class, prep, factcheck
+          description: One of class, prep, factcheck, doubt
         content:
           $ref: "#/components/schemas/HistoryContent"
         verdict:

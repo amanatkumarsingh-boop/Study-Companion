@@ -12,9 +12,13 @@ export interface HistoryContent {
   /** @nullable */
   notes?: string | null;
   /** @nullable */
+  formulas?: string | null;
+  /** @nullable */
   questions?: string | null;
   /** @nullable */
   verdict?: string | null;
   /** @nullable */
   explanation?: string | null;
+  /** @nullable */
+  answer?: string | null;
 }

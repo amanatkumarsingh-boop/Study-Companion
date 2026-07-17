@@ -33,18 +33,24 @@ export function HistoryFeed() {
     );
   }
 
-  const getEmojiAndLabel = (mode: string) => {
+  const getModeStyle = (mode: string) => {
     switch (mode) {
-      case 'class': return { emoji: '🎙️', label: 'Class' };
-      case 'prep': return { emoji: '📖', label: 'Prep' };
-      case 'factcheck': return { emoji: '🔍', label: 'Fact Check' };
-      default: return { emoji: '📄', label: 'Log' };
+      case 'class':     return { emoji: '🎙️', label: 'Class',      color: '#10B981' };
+      case 'prep':      return { emoji: '📖', label: 'Prep',       color: '#8B5CF6' };
+      case 'factcheck': return { emoji: '🔍', label: 'Fact Check', color: '#06B6D4' };
+      case 'doubt':     return { emoji: '💡', label: 'Doubt',      color: '#F59E0B' };
+      default:          return { emoji: '📄', label: 'Log',        color: '#6B7280' };
     }
   };
 
   const getPreviewText = (entry: any) => {
     if (entry.mode === 'factcheck') {
-      return entry.content.verdict ? `${entry.content.verdict}: ${entry.content.explanation}` : 'Fact check result';
+      return entry.content.verdict
+        ? `${entry.content.verdict}: ${entry.content.explanation}`
+        : 'Fact check result';
+    }
+    if (entry.mode === 'doubt') {
+      return entry.content.answer || 'Doubt answered';
     }
     return entry.content.summary || entry.content.notes || 'Processing generated materials...';
   };
@@ -52,23 +58,26 @@ export function HistoryFeed() {
   return (
     <div className="flex flex-col gap-4">
       {history.slice(0, 20).map((entry) => {
-        const { emoji, label } = getEmojiAndLabel(entry.mode);
+        const { emoji, label, color } = getModeStyle(entry.mode);
         const preview = getPreviewText(entry);
 
         return (
-          <div key={entry.id} className="p-5 rounded-2xl border border-border bg-card hover:bg-muted/40 transition-colors flex flex-col gap-3 group cursor-default shadow-sm">
+          <div key={entry.id} className="p-5 rounded-2xl border border-border bg-card hover:bg-muted/40 transition-colors flex flex-col gap-3 cursor-default shadow-sm">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="text-lg leading-none" aria-hidden="true">{emoji}</span>
-                <span className="text-[10px] font-bold tracking-widest uppercase text-muted-foreground bg-background px-2 py-0.5 rounded-full border border-border">{label}</span>
+                <span
+                  className="text-[10px] font-bold tracking-widest uppercase px-2 py-0.5 rounded-full border"
+                  style={{ color, borderColor: `${color}40`, backgroundColor: `${color}15` }}
+                >
+                  {label}
+                </span>
               </div>
               <span className="text-xs font-mono text-muted-foreground/60">
                 {formatDistanceToNow(new Date(entry.created_at), { addSuffix: true })}
               </span>
             </div>
-            <p className="text-sm font-mono text-foreground/70 line-clamp-2 leading-relaxed">
-              {preview}
-            </p>
+            <p className="text-sm font-mono text-foreground/70 line-clamp-2 leading-relaxed">{preview}</p>
           </div>
         );
       })}

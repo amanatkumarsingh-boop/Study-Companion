@@ -32,6 +32,7 @@ export const ProcessClassResponse = zod.object({
   "content": zod.object({
   "summary": zod.string(),
   "notes": zod.string(),
+  "formulas": zod.string(),
   "questions": zod.string()
 })
 })
@@ -76,18 +77,38 @@ export const ProcessFactCheckResponse = zod.object({
 
 
 /**
+ * Submit a spoken or written doubt query in any language and receive a clear English answer
+ * @summary Answer a student doubt
+ */
+
+
+
+export const ProcessDoubtBody = zod.object({
+  "query": zod.string().min(1)
+})
+
+export const ProcessDoubtResponse = zod.object({
+  "content": zod.object({
+  "answer": zod.string()
+})
+})
+
+
+/**
  * Retrieve the most recent study session logs from the database
  * @summary Get recent logs
  */
 export const GetHistoryResponseItem = zod.object({
   "id": zod.number(),
-  "mode": zod.string().describe('One of class, prep, factcheck'),
+  "mode": zod.string().describe('One of class, prep, factcheck, doubt'),
   "content": zod.object({
   "summary": zod.string().nullish(),
   "notes": zod.string().nullish(),
+  "formulas": zod.string().nullish(),
   "questions": zod.string().nullish(),
   "verdict": zod.string().nullish(),
-  "explanation": zod.string().nullish()
+  "explanation": zod.string().nullish(),
+  "answer": zod.string().nullish()
 }),
   "verdict": zod.string().nullish().describe('For factcheck entries only'),
   "created_at": zod.coerce.date()

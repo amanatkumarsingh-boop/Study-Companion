@@ -23,6 +23,8 @@ import type {
   ApiError,
   ClassInput,
   ClassResult,
+  DoubtInput,
+  DoubtResult,
   FactCheckInput,
   FactCheckResult,
   HealthStatus,
@@ -350,6 +352,78 @@ export const useProcessFactCheck = <TError = ErrorType<ApiError>,
         TContext
       > => {
       return useMutation(getProcessFactCheckMutationOptions(options));
+    }
+
+export const getProcessDoubtUrl = () => {
+
+
+
+
+  return `/api/doubt`
+}
+
+/**
+ * Submit a spoken or written doubt query in any language and receive a clear English answer
+ * @summary Answer a student doubt
+ */
+export const processDoubt = async (doubtInput: DoubtInput, options?: RequestInit): Promise<DoubtResult> => {
+
+  return customFetch<DoubtResult>(getProcessDoubtUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(doubtInput)
+  }
+);}
+
+
+
+
+
+export const getProcessDoubtMutationOptions = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof processDoubt>>, TError,{data: BodyType<DoubtInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof processDoubt>>, TError,{data: BodyType<DoubtInput>}, TContext> => {
+
+const mutationKey = ['processDoubt'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof processDoubt>>, {data: BodyType<DoubtInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  processDoubt(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ProcessDoubtMutationResult = NonNullable<Awaited<ReturnType<typeof processDoubt>>>
+    export type ProcessDoubtMutationBody = BodyType<DoubtInput>
+    export type ProcessDoubtMutationError = ErrorType<ApiError>
+
+    /**
+ * @summary Answer a student doubt
+ */
+export const useProcessDoubt = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof processDoubt>>, TError,{data: BodyType<DoubtInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof processDoubt>>,
+        TError,
+        {data: BodyType<DoubtInput>},
+        TContext
+      > => {
+      return useMutation(getProcessDoubtMutationOptions(options));
     }
 
 export const getGetHistoryUrl = () => {
