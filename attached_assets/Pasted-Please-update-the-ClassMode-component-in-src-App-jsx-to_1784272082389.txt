@@ -1,0 +1,21 @@
+Please update the ClassMode component in 'src/App.jsx' to include a real-time HTML5 Canvas Audio Waveform Visualizer so the user has immediate visual confirmation that the app is listening and capturing their microphone audio.
+
+Apply these technical configurations directly:
+
+1. AUDIO ANALYSIS PIPELINE (Web Audio API)
+   - Inside the 'startClass' function, right after capturing the microphone stream via 'navigator.mediaDevices.getUserMedia({ audio: true })', instantiate a native browser 'AudioContext'.
+   - Create a 'MediaStreamAudioSourceNode' using your stream, and route it directly into a native 'AnalyserNode'.
+   - Set the analyser node's FFT size to 2048 ('analyser.fftSize = 2048').
+
+2. CANVAS ANIMATION LAYER
+   - Below the "Start Class" / "End Class" toggle button grid, place an HTML5 '<canvas>' element directly inside the live tracking layout status block.
+   - Set the canvas styling to match the theme: width 100%, height 96px, rounded-lg (`rounded-lg`), background matching your Midnight Black color profile (`bg-[#0B0F19]`).
+
+3. THE WAVELINE ANIMATION LOOP
+   - Build a recursive rendering function using 'requestAnimationFrame' that reads the active microphone frequency waveform data array using 'analyser.getByteTimeDomainData()'.
+   - Clear the canvas context on every frame, and draw a smooth continuous wave line cutting through the absolute vertical center of the screen.
+   - Stylize the stroke line using the active Class Mode accent theme: Emerald Green (`#10B981`) with a stroke width of 2.5px.
+   - The wave amplitude should change dynamically with the sound of the user's voice. If no signal or silence is detected (e.g. mic doesn't work), the canvas must cleanly draw a perfectly flat line right across the middle so the user knows they are muted.
+
+4. RESOURCE CLEANUP
+   - Ensure that when the 'endClass' function is triggered, the animation loop stops, the AudioContext is cleanly closed/suspended, and the canvas resets so it does not cause any background memory leaks.
