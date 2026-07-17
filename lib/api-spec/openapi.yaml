@@ -3,13 +3,15 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: AI Study Companion API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: study
+    description: Study companion operations
 paths:
   /healthz:
     get:
@@ -24,6 +26,125 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /class:
+    post:
+      operationId: processClass
+      tags: [study]
+      summary: Process class transcript
+      description: Submit a live class transcript and receive AI-generated study materials
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClassInput"
+      responses:
+        "200":
+          description: Study materials generated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClassResult"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /prep:
+    post:
+      operationId: processPrep
+      tags: [study]
+      summary: Generate study notes from text
+      description: Submit pasted text or transcript and receive AI-generated study notes and predicted exam questions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PrepInput"
+      responses:
+        "200":
+          description: Study notes generated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PrepResult"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /factcheck:
+    post:
+      operationId: processFactCheck
+      tags: [study]
+      summary: Fact check a claim
+      description: Verify whether a claim is true or false with explanation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FactCheckInput"
+      responses:
+        "200":
+          description: Fact check result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FactCheckResult"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /history:
+    get:
+      operationId: getHistory
+      tags: [study]
+      summary: Get recent logs
+      description: Retrieve the most recent study session logs from the database
+      responses:
+        "200":
+          description: History entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/HistoryEntry"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +155,104 @@ components:
       required:
         - status
 
+    ApiError:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    ClassInput:
+      type: object
+      required: [transcript]
+      properties:
+        transcript:
+          type: string
+          minLength: 1
+
+    ClassContent:
+      type: object
+      required: [summary, notes, questions]
+      properties:
+        summary:
+          type: string
+        notes:
+          type: string
+        questions:
+          type: string
+
+    ClassResult:
+      type: object
+      required: [content]
+      properties:
+        content:
+          $ref: "#/components/schemas/ClassContent"
+
+    PrepInput:
+      type: object
+      required: [text]
+      properties:
+        text:
+          type: string
+          minLength: 1
+
+    PrepContent:
+      type: object
+      required: [summary, questions]
+      properties:
+        summary:
+          type: string
+        questions:
+          type: string
+
+    PrepResult:
+      type: object
+      required: [content]
+      properties:
+        content:
+          $ref: "#/components/schemas/PrepContent"
+
+    FactCheckInput:
+      type: object
+      required: [claim]
+      properties:
+        claim:
+          type: string
+          minLength: 1
+
+    FactCheckContent:
+      type: object
+      required: [verdict, explanation]
+      properties:
+        verdict:
+          type: string
+          description: Either CORRECT or FALSE
+        explanation:
+          type: string
+
+    FactCheckResult:
+      type: object
+      required: [content]
+      properties:
+        content:
+          $ref: "#/components/schemas/FactCheckContent"
+
+    HistoryEntry:
+      type: object
+      required: [id, mode, content, created_at]
+      properties:
+        id:
+          type: integer
+        mode:
+          type: string
+          description: One of class, prep, factcheck
+        content:
+          type: object
+          description: JSON content depending on mode
+        verdict:
+          type: ["string", "null"]
+          description: For factcheck entries only
+        created_at:
+          type: string
+          format: date-time

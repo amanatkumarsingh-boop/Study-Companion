@@ -1,0 +1,557 @@
+// App.jsx
+// Single-file React client for the AI Study Companion MVP.
+// Manages three modes (Class, Prep, Fact Check) via a tab switcher,
+// handles live browser audio transcription for Class mode, calls the
+// Express backend, and renders a shared "Recent Logs" history feed
+// pulled from PostgreSQL via GET /api/history.
+//
+// Requires: React 18+, Tailwind CSS configured in the host project.
+// Drop this into src/App.jsx of a Vite or Create React App project.
+
+import { useState, useEffect, useRef, useCallback } from 'react';
+
+// If the frontend and backend are served from different origins/ports,
+// set VITE_API_URL (Vite) in your .env file, e.g. VITE_API_URL=http://localhost:3001
+// Leave it empty to use same-origin relative requests (default on Replit
+// when the backend serves the built frontend).
+const API_BASE =
+  (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_URL) || '';
+
+const TABS = [
+  { id: 'class', label: 'Class' },
+  { id: 'prep', label: 'Prep' },
+  { id: 'factcheck', label: 'Fact Check' }
+];
+
+function OfflineBanner({ isOnline }) {
+  if (isOnline) return null;
+  return (
+    <div className="fixed top-0 left-0 right-0 z-50 bg-red-600 text-white text-center py-2 text-sm font-medium shadow-lg">
+      ⚠️ You're Offline — some features may not work until your connection is restored.
+    </div>
+  );
+}
+
+function TabNav({ activeTab, setActiveTab }) {
+  return (
+    <nav className="flex bg-slate-800 border-b border-slate-700 sticky top-0 z-40">
+      {TABS.map((tab) => (
+        <button
+          key={tab.id}
+          onClick={() => setActiveTab(tab.id)}
+          className={`flex-1 py-4 text-sm font-semibold tracking-wide transition-colors duration-150 ${
+            activeTab === tab.id
+              ? 'text-slate-100 border-b-2 border-emerald-400 bg-slate-800'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-700/50'
+          }`}
+        >
+          {tab.label}
+        </button>
+      ))}
+    </nav>
+  );
+}
+
+function ContentCard({ emoji, title, children }) {
+  return (
+    <div className="bg-slate-800 border border-slate-700 rounded-xl p-5 shadow-md">
+      <h3 className="text-base font-bold text-slate-100 mb-3 flex items-center gap-2">
+        <span>{emoji}</span>
+        <span>{title}</span>
+      </h3>
+      <div className="text-sm text-slate-300 whitespace-pre-wrap leading-relaxed">{children}</div>
+    </div>
+  );
+}
+
+function LoadingSpinner({ label }) {
+  return (
+    <div className="flex items-center gap-3 text-slate-400 text-sm py-4">
+      <div className="w-4 h-4 border-2 border-slate-500 border-t-emerald-400 rounded-full animate-spin" />
+      <span>{label}</span>
+    </div>
+  );
+}
+
+function ErrorBanner({ message }) {
+  if (!message) return null;
+  return (
+    <div className="bg-red-900/40 border border-red-700 text-red-300 text-sm rounded-lg px-4 py-3">
+      {message}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// MODE 1: Class
+// ---------------------------------------------------------------------------
+
+function ClassMode({ onNewLog }) {
+  const [isRecording, setIsRecording] = useState(false);
+  const [liveTranscript, setLiveTranscript] = useState('');
+  const [result, setResult] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
+  const recognitionRef = useRef(null);
+  const mediaStreamRef = useRef(null);
+  const mediaRecorderRef = useRef(null);
+  const finalTranscriptRef = useRef('');
+
+  const submitTranscript = useCallback(
+    async (transcriptText) => {
+      if (!transcriptText || transcriptText.trim().length === 0) {
+        setError('No speech was captured during the session. Please try again.');
+        return;
+      }
+      setIsSubmitting(true);
+      setError('');
+      try {
+        const res = await fetch(`${API_BASE}/api/class`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ transcript: transcriptText })
+        });
+        if (!res.ok) {
+          const errBody = await res.json().catch(() => ({}));
+          throw new Error(errBody.error || 'Failed to process class transcript.');
+        }
+        const data = await res.json();
+        setResult(data.content);
+        onNewLog();
+      } catch (err) {
+        setError(err.message || 'Something went wrong while processing your class.');
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [onNewLog]
+  );
+
+  const startClass = async () => {
+    setError('');
+    setResult(null);
+    finalTranscriptRef.current = '';
+    setLiveTranscript('');
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaStreamRef.current = stream;
+
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      mediaRecorder.start();
+
+      const SpeechRecognitionImpl = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+      if (SpeechRecognitionImpl) {
+        const recognition = new SpeechRecognitionImpl();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = 'en-US';
+
+        recognition.onresult = (event) => {
+          let interim = '';
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+            const transcriptPiece = event.results[i][0].transcript;
+            if (event.results[i].isFinal) {
+              finalTranscriptRef.current += transcriptPiece + ' ';
+            } else {
+              interim += transcriptPiece;
+            }
+          }
+          setLiveTranscript(finalTranscriptRef.current + interim);
+        };
+
+        recognition.onerror = (event) => {
+          console.warn('SpeechRecognition error:', event.error);
+        };
+
+        recognition.onend = () => {
+          if (isRecording) {
+            try {
+              recognition.start();
+            } catch (e) {
+              // recognition already running; ignore
+            }
+          }
+        };
+
+        recognitionRef.current = recognition;
+        recognition.start();
+      } else {
+        setError(
+          'Live speech-to-text is not supported in this browser. Audio is still being recorded, but transcript text may be empty.'
+        );
+      }
+
+      setIsRecording(true);
+    } catch (err) {
+      setError('Microphone access was denied or is unavailable. Please allow microphone permissions and try again.');
+    }
+  };
+
+  const endClass = async () => {
+    setIsRecording(false);
+
+    if (recognitionRef.current) {
+      recognitionRef.current.onend = null;
+      recognitionRef.current.stop();
+      recognitionRef.current = null;
+    }
+
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+    }
+
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getTracks().forEach((track) => track.stop());
+      mediaStreamRef.current = null;
+    }
+
+    const finalText = finalTranscriptRef.current.trim();
+    setLiveTranscript(finalText);
+    await submitTranscript(finalText);
+  };
+
+  return (
+    <div className="space-y-5">
+      <div className="bg-slate-800 border border-slate-700 rounded-xl p-6 text-center">
+        {!isRecording ? (
+          <button
+            onClick={startClass}
+            className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-lg px-8 py-4 rounded-lg shadow-lg transition-colors duration-150 w-full sm:w-auto"
+          >
+            Start Class
+          </button>
+        ) : (
+          <button
+            onClick={endClass}
+            className="bg-red-600 hover:bg-red-500 text-white font-bold text-lg px-8 py-4 rounded-lg shadow-lg transition-colors duration-150 w-full sm:w-auto animate-pulse"
+          >
+            End Class
+          </button>
+        )}
+
+        {isRecording && (
+          <div className="mt-4 text-left bg-slate-900 border border-slate-700 rounded-lg p-3 max-h-40 overflow-y-auto">
+            <p className="text-xs text-slate-500 mb-1 font-semibold uppercase tracking-wide">Live transcript</p>
+            <p className="text-sm text-slate-300 whitespace-pre-wrap">
+              {liveTranscript || 'Listening…'}
+            </p>
+          </div>
+        )}
+      </div>
+
+      <ErrorBanner message={error} />
+
+      {isSubmitting && <LoadingSpinner label="Generating your study materials…" />}
+
+      {result && (
+        <div className="space-y-4">
+          <ContentCard emoji="📝" title="Executive Summary">
+            {result.summary}
+          </ContentCard>
+          <ContentCard emoji="📚" title="Study Notes">
+            {result.notes}
+          </ContentCard>
+          <ContentCard emoji="❓" title="Important Questions">
+            {result.questions}
+          </ContentCard>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// MODE 2: Prep
+// ---------------------------------------------------------------------------
+
+function PrepMode({ onNewLog }) {
+  const [inputText, setInputText] = useState('');
+  const [result, setResult] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleGenerate = async () => {
+    if (!inputText.trim()) {
+      setError('Please paste some text or a transcript first.');
+      return;
+    }
+    setIsSubmitting(true);
+    setError('');
+    setResult(null);
+    try {
+      const res = await fetch(`${API_BASE}/api/prep`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: inputText })
+      });
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        throw new Error(errBody.error || 'Failed to generate study notes.');
+      }
+      const data = await res.json();
+      setResult(data.content);
+      onNewLog();
+    } catch (err) {
+      setError(err.message || 'Something went wrong while generating study notes.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="space-y-5">
+      <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">
+        <label htmlFor="prep-input" className="block text-sm font-semibold text-slate-300 mb-2">
+          Paste Text or Video Transcript
+        </label>
+        <textarea
+          id="prep-input"
+          value={inputText}
+          onChange={(e) => setInputText(e.target.value)}
+          rows={8}
+          placeholder="Paste your lecture transcript, article, or notes here…"
+          className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-y"
+        />
+        <button
+          onClick={handleGenerate}
+          disabled={isSubmitting}
+          className="mt-4 w-full sm:w-auto bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold px-6 py-3 rounded-lg shadow-md transition-colors duration-150"
+        >
+          Generate Study Notes
+        </button>
+      </div>
+
+      <ErrorBanner message={error} />
+
+      {isSubmitting && <LoadingSpinner label="Analyzing your material…" />}
+
+      {result && (
+        <div className="space-y-4">
+          <ContentCard emoji="📋" title="Material Summary">
+            {result.summary}
+          </ContentCard>
+          <ContentCard emoji="🎯" title="Predicted Exam Questions">
+            {result.questions}
+          </ContentCard>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// MODE 3: Fact Check
+// ---------------------------------------------------------------------------
+
+function FactCheckMode({ onNewLog }) {
+  const [claim, setClaim] = useState('');
+  const [result, setResult] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleVerify = async () => {
+    if (!claim.trim()) {
+      setError('Please paste a claim to verify first.');
+      return;
+    }
+    setIsSubmitting(true);
+    setError('');
+    setResult(null);
+    try {
+      const res = await fetch(`${API_BASE}/api/factcheck`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ claim })
+      });
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        throw new Error(errBody.error || 'Failed to verify claim.');
+      }
+      const data = await res.json();
+      setResult(data.content);
+      onNewLog();
+    } catch (err) {
+      setError(err.message || 'Something went wrong while verifying this claim.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const isTrue = result && result.verdict === 'CORRECT';
+
+  return (
+    <div className="space-y-5">
+      <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">
+        <label htmlFor="claim-input" className="block text-sm font-semibold text-slate-300 mb-2">
+          Paste Viral Claim to Verify
+        </label>
+        <textarea
+          id="claim-input"
+          value={claim}
+          onChange={(e) => setClaim(e.target.value)}
+          rows={4}
+          placeholder="e.g. 'Drinking lemon water instantly detoxifies your entire body.'"
+          className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-y"
+        />
+        <button
+          onClick={handleVerify}
+          disabled={isSubmitting}
+          className="mt-4 w-full sm:w-auto bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold px-6 py-3 rounded-lg shadow-md transition-colors duration-150"
+        >
+          Verify Truth
+        </button>
+      </div>
+
+      <ErrorBanner message={error} />
+
+      {isSubmitting && <LoadingSpinner label="Scanning claim for red flags…" />}
+
+      {result && (
+        <div className="space-y-4">
+          <div
+            className={`rounded-xl p-5 text-center font-extrabold text-xl border-2 shadow-lg ${
+              isTrue
+                ? 'bg-emerald-900/40 border-emerald-500 text-emerald-300'
+                : 'bg-red-900/40 border-red-500 text-red-300'
+            }`}
+          >
+            {isTrue ? '✅ [CORRECT]' : '🚫 [FALSE]'}
+          </div>
+          <ContentCard emoji="🔎" title="Explanation">
+            {result.explanation}
+          </ContentCard>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Shared: Recent Logs history feed
+// ---------------------------------------------------------------------------
+
+const MODE_LABELS = {
+  class: { emoji: '🎙️', label: 'Class' },
+  prep: { emoji: '📖', label: 'Prep' },
+  factcheck: { emoji: '🔍', label: 'Fact Check' }
+};
+
+function renderLogPreview(log) {
+  const content = log.content || {};
+  if (log.mode === 'class') {
+    return content.summary || 'No summary available.';
+  }
+  if (log.mode === 'prep') {
+    return content.summary || 'No summary available.';
+  }
+  if (log.mode === 'factcheck') {
+    return `${log.verdict === 'CORRECT' ? '✅ CORRECT' : '🚫 FALSE'} — ${content.explanation || ''}`;
+  }
+  return '';
+}
+
+function HistoryFeed({ history, isLoading }) {
+  return (
+    <div className="mt-10">
+      <h2 className="text-lg font-bold text-slate-100 mb-4">Recent Logs</h2>
+
+      {isLoading && <LoadingSpinner label="Loading history…" />}
+
+      {!isLoading && history.length === 0 && (
+        <p className="text-sm text-slate-500 italic">No history yet — your saved results will show up here.</p>
+      )}
+
+      <div className="space-y-3">
+        {history.map((log) => {
+          const meta = MODE_LABELS[log.mode] || { emoji: '📄', label: log.mode };
+          return (
+            <div
+              key={log.id}
+              className="bg-slate-800 border border-slate-700 rounded-lg p-4 hover:border-slate-600 transition-colors duration-150"
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-semibold text-emerald-400 uppercase tracking-wide">
+                  {meta.emoji} {meta.label}
+                </span>
+                <span className="text-xs text-slate-500">
+                  {new Date(log.created_at).toLocaleString()}
+                </span>
+              </div>
+              <p className="text-sm text-slate-400 line-clamp-3">{renderLogPreview(log)}</p>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Root App
+// ---------------------------------------------------------------------------
+
+export default function App() {
+  const [activeTab, setActiveTab] = useState('class');
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [history, setHistory] = useState([]);
+  const [isHistoryLoading, setIsHistoryLoading] = useState(true);
+
+  const fetchHistory = useCallback(async () => {
+    setIsHistoryLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/history`);
+      if (!res.ok) throw new Error('Failed to load history');
+      const data = await res.json();
+      setHistory(data);
+    } catch (err) {
+      console.error('Failed to fetch history:', err);
+    } finally {
+      setIsHistoryLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchHistory();
+  }, [fetchHistory]);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  return (
+    <div className="min-h-screen bg-slate-900 text-slate-100">
+      <OfflineBanner isOnline={isOnline} />
+
+      <header className="bg-slate-800 border-b border-slate-700 px-4 py-4">
+        <h1 className="text-xl font-extrabold text-center tracking-tight">
+          AI Study Companion
+        </h1>
+      </header>
+
+      <TabNav activeTab={activeTab} setActiveTab={setActiveTab} />
+
+      <main className="max-w-2xl mx-auto px-4 py-6">
+        {activeTab === 'class' && <ClassMode onNewLog={fetchHistory} />}
+        {activeTab === 'prep' && <PrepMode onNewLog={fetchHistory} />}
+        {activeTab === 'factcheck' && <FactCheckMode onNewLog={fetchHistory} />}
+
+        <HistoryFeed history={history} isLoading={isHistoryLoading} />
+      </main>
+
+      <footer className="text-center text-xs text-slate-600 py-6">
+        Built with Node.js, Express, PostgreSQL &amp; React
+      </footer>
+    </div>
+  );
+}
