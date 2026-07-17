@@ -4,6 +4,18 @@ import { useQueryClient } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
 import { Mic, MicOff, Loader2, Lightbulb, Send } from 'lucide-react';
 
+function normalizeContent(content: unknown): string {
+  if (content === null || content === undefined) return '';
+  if (typeof content === 'string') return content;
+  if (Array.isArray(content)) return content.map((item) => normalizeContent(item)).join('\n');
+  if (typeof content === 'object') {
+    return Object.entries(content as Record<string, unknown>)
+      .map(([k, v]) => `${k}: ${normalizeContent(v)}`)
+      .join('\n');
+  }
+  return String(content);
+}
+
 export function DoubtMode() {
   const [query, setQuery] = useState('');
   const [isListening, setIsListening] = useState(false);
@@ -263,7 +275,7 @@ export function DoubtMode() {
             <h3 className="font-bold text-sm tracking-wide">Answer</h3>
           </div>
           <div className="p-6 text-sm whitespace-pre-wrap leading-relaxed text-card-foreground/90 font-mono">
-            {result.answer}
+            {normalizeContent(result.answer)}
           </div>
         </div>
       )}

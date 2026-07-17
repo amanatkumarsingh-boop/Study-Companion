@@ -43,16 +43,24 @@ export function HistoryFeed() {
     }
   };
 
+  const normalizeStr = (val: unknown): string => {
+    if (!val) return '';
+    if (typeof val === 'string') return val;
+    if (Array.isArray(val)) return val.join(' ');
+    if (typeof val === 'object') return Object.values(val as Record<string, unknown>).join(' ');
+    return String(val);
+  };
+
   const getPreviewText = (entry: any) => {
     if (entry.mode === 'factcheck') {
       return entry.content.verdict
-        ? `${entry.content.verdict}: ${entry.content.explanation}`
+        ? `${entry.content.verdict}: ${normalizeStr(entry.content.explanation)}`
         : 'Fact check result';
     }
     if (entry.mode === 'doubt') {
-      return entry.content.answer || 'Doubt answered';
+      return normalizeStr(entry.content.answer) || 'Doubt answered';
     }
-    return entry.content.summary || entry.content.notes || 'Processing generated materials...';
+    return normalizeStr(entry.content.summary) || normalizeStr(entry.content.notes) || 'Processing generated materials...';
   };
 
   return (

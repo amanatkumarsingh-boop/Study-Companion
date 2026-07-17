@@ -3,6 +3,18 @@ import { useProcessPrep, getGetHistoryQueryKey } from '@workspace/api-client-rea
 import { useQueryClient } from '@tanstack/react-query';
 import { Loader2, ArrowRight, BookOpen, Target } from 'lucide-react';
 
+function normalizeContent(content: unknown): string {
+  if (content === null || content === undefined) return '';
+  if (typeof content === 'string') return content;
+  if (Array.isArray(content)) return content.map((item) => normalizeContent(item)).join('\n');
+  if (typeof content === 'object') {
+    return Object.entries(content as Record<string, unknown>)
+      .map(([k, v]) => `${k}: ${normalizeContent(v)}`)
+      .join('\n');
+  }
+  return String(content);
+}
+
 export function PrepMode() {
   const [text, setText] = useState('');
   const processPrep = useProcessPrep();
@@ -54,7 +66,7 @@ export function PrepMode() {
               <h3 className="font-bold text-sm tracking-wide">Material Summary</h3>
             </div>
             <div className="p-6 text-sm whitespace-pre-wrap leading-relaxed text-card-foreground/90 font-mono">
-              {result.summary}
+              {normalizeContent(result.summary)}
             </div>
           </div>
 
@@ -66,7 +78,7 @@ export function PrepMode() {
               <h3 className="font-bold text-sm tracking-wide">Predicted Exam Questions</h3>
             </div>
             <div className="p-6 text-sm whitespace-pre-wrap leading-relaxed text-card-foreground/90 font-mono">
-              {result.questions}
+              {normalizeContent(result.questions)}
             </div>
           </div>
         </div>

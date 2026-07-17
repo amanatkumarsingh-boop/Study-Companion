@@ -250,7 +250,19 @@ export function ClassMode() {
   );
 }
 
-function ResultCard({ title, content, icon: Icon, accentColor }: { title: string; content: string; icon: any; accentColor: string }) {
+function normalizeContent(content: unknown): string {
+  if (content === null || content === undefined) return '';
+  if (typeof content === 'string') return content;
+  if (Array.isArray(content)) return content.map((item) => normalizeContent(item)).join('\n');
+  if (typeof content === 'object') {
+    return Object.entries(content as Record<string, unknown>)
+      .map(([k, v]) => `${k}: ${normalizeContent(v)}`)
+      .join('\n');
+  }
+  return String(content);
+}
+
+function ResultCard({ title, content, icon: Icon, accentColor }: { title: string; content: unknown; icon: any; accentColor: string }) {
   return (
     <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-xl animate-reveal">
       <div className="bg-muted/30 px-6 py-4 border-b border-border flex items-center gap-3">
@@ -259,7 +271,7 @@ function ResultCard({ title, content, icon: Icon, accentColor }: { title: string
         </div>
         <h3 className="font-bold text-sm tracking-wide">{title}</h3>
       </div>
-      <div className="p-6 text-sm whitespace-pre-wrap leading-relaxed text-card-foreground/90 font-mono">{content}</div>
+      <div className="p-6 text-sm whitespace-pre-wrap leading-relaxed text-card-foreground/90 font-mono">{normalizeContent(content)}</div>
     </div>
   );
 }
