@@ -1,0 +1,22 @@
+Please apply this structural patch to the codebase to fix the missing card outputs across Class, Prep, Fact Check, and Doubt modes. Do not truncate the code.
+
+---
+
+### 1. ALIGN BACKEND API KEY & MODEL VALUES (server.js)
+Ensure your Google Gen AI package instances explicitly initialize from `process.env.GEMINI_API_KEY` using the optimized `gemini-2.5-flash` model structure. Double check that every controller endpoint parses JSON models from the client and correctly wraps database queries inside try/catch boxes.
+
+### 2. STANDARDIZED API INTERACTION & STORAGE (server.js & db.js)
+Ensure all POST routes evaluate data securely and save results directly into the PostgreSQL pool:
+- **POST /api/class:** Direct the Gemini prompt text generation layout to strictly yield a stringified JSON body detailing four absolute parameters in English: 'summary', 'notes', 'formulas', and 'questions'. 
+- **POST /api/prep:** Ensure the generation parses 'summary' and 'questions'.
+- **POST /api/factcheck:** Match output validation strictly to 'verdict' and 'explanation'.
+- **POST /api/doubt:** Parse user prompts to save a clean, comprehensive 'answer' block configuration layout.
+
+### 3. FRONTEND RESULT BLOCK RENDER ENGINE (src/App.jsx)
+Fix the ClassMode, PrepMode, FactCheckMode, and DoubtMode components so they match the exact object keys returned by the backend routes:
+- In `ClassMode`, verify that when `result` is populated, the component maps keys explicitly: `{result.summary}`, `{result.notes}`, `{result.formulas}`, and `{result.questions}` inside their respective ContentCard components.
+- In `PrepMode`, verify the UI accurately captures and presents `{result.summary}` and `{result.questions}`.
+- In `FactCheckMode`, read `{result.verdict}` and `{result.explanation}` to control the visibility toggles of the custom conditional error states and color verdict banners.
+- In `DoubtMode`, cleanly pull the parsed string from `{result.answer}` to load the query solution.
+
+Ensure the files update completely, the backend service loop refreshes without error, and all cards render target data correctly upon operational submission.
