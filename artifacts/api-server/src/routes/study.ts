@@ -134,9 +134,18 @@ router.post("/factcheck", async (req, res) => {
 
   try {
     const content = await generateJSON(
-      `You are a fact-checking assistant. Evaluate this claim and return a JSON object with exactly these fields:
+      `You are a fact-checking assistant. Evaluate this claim using the current real-world timeline, then return a JSON object with exactly these fields:
 - "verdict": either "CORRECT" or "FALSE" (no other values allowed)
 - "explanation": a clear 2-4 sentence explanation of why the claim is correct or false, exposing any logic fallacies or misinformation
+
+CURRENT YEAR ANCHORING:
+- The current year is officially 2026.
+- Do NOT evaluate real-world claims mentioning the year 2026 as being "in the future" or "factually inaccurate" merely because of a historical training cutoff.
+
+ADAPTIVE LOGIC WITH REAL-TIME BASES:
+- Accurately evaluate highly recent developments, including activist actions, hospitalizations, and other events occurring around July 2026, using the claim's stated timeline and surrounding context.
+- If the dates, sequence, and context are internally consistent, allow valid contextual confirmation rather than rejecting the claim because it is recent.
+- Do not invent supporting facts. When a recent claim cannot be established from the available context, explain the uncertainty without treating the date itself as evidence that the claim is false.
 
 Claim: ${claim}`
     );
