@@ -7,7 +7,7 @@ import runtimeErrorOverlay from '@replit/vite-plugin-runtime-error-modal';
 
 // The workflow supplies PORT/BASE_PATH at runtime. Keep local builds usable
 // when those deployment-only variables are absent.
-const rawPort = process.env.PORT ?? '5173';
+const rawPort = process.env.PORT ?? '3000';
 const port = Number(rawPort);
 
 if (Number.isNaN(port) || port <= 0) {
