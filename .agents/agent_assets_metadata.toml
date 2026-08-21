@@ -1,0 +1,9 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "EscWsfzvHdlptuukQAhpA"
+uri = "file://project-source.zip"
+type = "unspecified"
+title = "Project source archive"
+description = "Clean source archive excluding node_modules, .git, build outputs, and common caches."
