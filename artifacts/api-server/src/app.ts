@@ -53,12 +53,16 @@ const clientDist =
 
 app.use(express.static(clientDist));
 
-app.get("*", (_req, res) => {
+// Catch-all handler for SPA (Express 5 compatible)
+app.use((req, res, next) => {
+  if (req.method !== "GET") {
+    return next();
+  }
   const indexHtml = path.join(clientDist, "index.html");
   if (fs.existsSync(indexHtml)) {
     res.sendFile(indexHtml);
   } else {
-    res.status(404).send(`Frontend assets not found. Looked in: ${clientDist}`);
+    res.status(404).send(`Frontend assets not found. Checked: ${clientDist}`);
   }
 });
 
