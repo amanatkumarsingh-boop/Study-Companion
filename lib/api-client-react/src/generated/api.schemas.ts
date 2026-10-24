@@ -28,11 +28,6 @@ export interface LoginInput {
   password: string;
 }
 
-export interface GoogleAuthInput {
-  /** @minLength 1 */
-  credential: string;
-}
-
 export interface AuthUser {
   id: string;
   email: string;

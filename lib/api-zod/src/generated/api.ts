@@ -68,27 +68,6 @@ export const AuthLoginResponse = zod.object({
 
 
 /**
- * @summary Sign in with a Google credential
- */
-
-
-
-export const AuthGoogleBody = zod.object({
-  "credential": zod.string().min(1)
-})
-
-export const AuthGoogleResponse = zod.object({
-  "user": zod.object({
-  "id": zod.string(),
-  "email": zod.string(),
-  "name": zod.string().nullable(),
-  "avatarUrl": zod.string().nullable(),
-  "createdAt": zod.coerce.date()
-})
-})
-
-
-/**
  * @summary Get the current user
  */
 export const AuthMeResponse = zod.object({

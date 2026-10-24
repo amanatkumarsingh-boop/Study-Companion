@@ -103,43 +103,6 @@ paths:
               schema:
                 $ref: "#/components/schemas/ApiError"
 
-  /auth/google:
-    post:
-      operationId: authGoogle
-      tags: [auth]
-      summary: Sign in with a Google credential
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/GoogleAuthInput"
-      responses:
-        "200":
-          description: Signed in
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AuthResponse"
-        "400":
-          description: Invalid Google credential
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ApiError"
-        "503":
-          description: Google sign-in is not configured
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ApiError"
-        "500":
-          description: Server error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ApiError"
-
   /auth/me:
     get:
       operationId: authMe
@@ -396,14 +359,6 @@ components:
           type: string
           minLength: 1
           maxLength: 128
-
-    GoogleAuthInput:
-      type: object
-      required: [credential]
-      properties:
-        credential:
-          type: string
-          minLength: 1
 
     AuthUser:
       type: object

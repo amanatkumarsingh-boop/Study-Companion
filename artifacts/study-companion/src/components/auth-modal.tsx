@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useState, type FormEvent } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -8,31 +8,6 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/auth-context';
-
-type GoogleIdentityApi = {
-  accounts: {
-    id: {
-      initialize: (options: {
-        client_id: string;
-        callback: (response: { credential?: string }) => void;
-      }) => void;
-      renderButton: (
-        element: HTMLElement,
-        options: { theme: 'filled_black'; size: 'large'; shape: 'pill'; width: number },
-      ) => void;
-      cancel: () => void;
-    };
-  };
-};
-
-declare global {
-  interface Window {
-    google?: GoogleIdentityApi;
-  }
-}
-
-const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID ?? '';
-const GOOGLE_SCRIPT_URL = 'https://accounts.google.com/gsi/client';
 
 interface AuthModalProps {
   open: boolean;
@@ -47,63 +22,6 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
-  const googleButton = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open || !GOOGLE_CLIENT_ID || !googleButton.current) return;
-
-    const host = googleButton.current;
-    const renderGoogleButton = () => {
-      if (!window.google || !host.isConnected) return;
-      window.google.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        callback: (response) => {
-          if (!response.credential) {
-            setError('Google sign-in did not return a credential. Please try again.');
-            return;
-          }
-          setBusy(true);
-          setError('');
-          void auth
-            .signInWithGoogle(response.credential)
-            .then(() => onOpenChange(false))
-            .catch((cause: unknown) => {
-              setError(cause instanceof Error ? cause.message : 'Google sign-in failed.');
-            })
-            .finally(() => setBusy(false));
-        },
-      });
-      host.replaceChildren();
-      window.google.accounts.id.renderButton(host, {
-        theme: 'filled_black',
-        size: 'large',
-        shape: 'pill',
-        width: Math.min(360, Math.max(240, host.clientWidth)),
-      });
-    };
-
-    let script = document.querySelector<HTMLScriptElement>(
-      `script[src="${GOOGLE_SCRIPT_URL}"]`,
-    );
-    if (!script) {
-      script = document.createElement('script');
-      script.src = GOOGLE_SCRIPT_URL;
-      script.async = true;
-      script.defer = true;
-      document.head.appendChild(script);
-    }
-
-    if (window.google) {
-      renderGoogleButton();
-    } else {
-      script.addEventListener('load', renderGoogleButton);
-    }
-
-    return () => {
-      script?.removeEventListener('load', renderGoogleButton);
-      window.google?.accounts.id.cancel();
-    };
-  }, [auth.signInWithGoogle, onOpenChange, open]);
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -199,20 +117,6 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
                 : 'Create account'}
           </button>
         </form>
-
-        <div className="relative my-1 flex items-center">
-          <span className="h-px flex-1 bg-white/10" />
-          <span className="px-3 text-xs uppercase tracking-wider text-slate-500">or</span>
-          <span className="h-px flex-1 bg-white/10" />
-        </div>
-
-        {GOOGLE_CLIENT_ID ? (
-          <div ref={googleButton} className="flex min-h-11 justify-center" />
-        ) : (
-          <p className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-center text-xs text-slate-400">
-            Google sign-in will be available after its OAuth client ID is configured.
-          </p>
-        )}
 
         <p className="text-center text-sm text-slate-400">
           {mode === 'login' ? 'New to Study Companion?' : 'Already have an account?'}{' '}

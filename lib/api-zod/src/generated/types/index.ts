@@ -18,7 +18,6 @@ export * from './doubtResult';
 export * from './factCheckContent';
 export * from './factCheckInput';
 export * from './factCheckResult';
-export * from './googleAuthInput';
 export * from './healthStatus';
 export * from './historyContent';
 export * from './historyEntry';

@@ -1,10 +1,7 @@
 import { Router, type Response } from "express";
-import { OAuth2Client } from "google-auth-library";
 import { compare, hash } from "bcryptjs";
 import { eq } from "drizzle-orm";
 import {
-  AuthGoogleBody,
-  AuthGoogleResponse,
   AuthLoginBody,
   AuthLoginResponse,
   AuthLogoutResponse,
@@ -21,7 +18,6 @@ import {
 } from "../middlewares/auth";
 
 const router = Router();
-const googleClient = new OAuth2Client();
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const SESSION_MAX_AGE = 7 * 24 * 60 * 60 * 1000;
 
@@ -53,14 +49,6 @@ function isUniqueViolation(error: unknown): boolean {
 
 function invalidEmail(email: string): boolean {
   return email.length > 254 || !EMAIL_PATTERN.test(email);
-}
-
-async function verifyGoogleCredential(credential: string, clientId: string) {
-  const ticket = await googleClient.verifyIdToken({
-    idToken: credential,
-    audience: clientId,
-  });
-  return ticket.getPayload();
 }
 
 router.post("/auth/register", async (req, res): Promise<void> => {
@@ -139,93 +127,6 @@ router.post("/auth/login", async (req, res): Promise<void> => {
   } catch (error: unknown) {
     req.log.error({ err: error }, "Failed to sign in with email");
     res.status(500).json({ error: "Unable to sign in right now." });
-  }
-});
-
-router.post("/auth/google", async (req, res): Promise<void> => {
-  const parsed = AuthGoogleBody.safeParse(req.body);
-  if (!parsed.success || parsed.data.credential.length > 10_000) {
-    res.status(400).json({ error: "A valid Google sign-in credential is required." });
-    return;
-  }
-
-  const clientId = process.env.GOOGLE_CLIENT_ID;
-  if (!clientId) {
-    res.status(503).json({ error: "Google sign-in is not configured yet." });
-    return;
-  }
-
-  let profile: Awaited<ReturnType<typeof verifyGoogleCredential>>;
-  try {
-    profile = await verifyGoogleCredential(parsed.data.credential, clientId);
-  } catch (error: unknown) {
-    req.log.warn({ err: error }, "Google credential verification failed");
-    res.status(400).json({ error: "Google sign-in could not be verified. Please try again." });
-    return;
-  }
-
-  if (
-    !profile?.sub ||
-    !profile.email ||
-    profile.email_verified !== true ||
-    invalidEmail(profile.email)
-  ) {
-    res.status(400).json({ error: "Google did not provide a verified email address." });
-    return;
-  }
-
-  const email = profile.email.trim().toLowerCase();
-  try {
-    let [user] = await db
-      .select()
-      .from(usersTable)
-      .where(eq(usersTable.googleId, profile.sub))
-      .limit(1);
-
-    if (!user) {
-      const [emailUser] = await db
-        .select()
-        .from(usersTable)
-        .where(eq(usersTable.email, email))
-        .limit(1);
-
-      if (emailUser) {
-        if (emailUser.googleId && emailUser.googleId !== profile.sub) {
-          res.status(409).json({ error: "This email is linked to a different Google account." });
-          return;
-        }
-
-        [user] = await db
-          .update(usersTable)
-          .set({
-            googleId: profile.sub,
-            name: emailUser.name ?? profile.name ?? null,
-            avatarUrl: emailUser.avatarUrl ?? profile.picture ?? null,
-          })
-          .where(eq(usersTable.id, emailUser.id))
-          .returning();
-      } else {
-        [user] = await db
-          .insert(usersTable)
-          .values({
-            email,
-            googleId: profile.sub,
-            name: profile.name ?? null,
-            avatarUrl: profile.picture ?? null,
-          })
-          .returning();
-      }
-    }
-
-    issueSession(res, user);
-    res.json(AuthGoogleResponse.parse({ user: toPublicUser(user) }));
-  } catch (error: unknown) {
-    if (isUniqueViolation(error)) {
-      res.status(409).json({ error: "This Google account is already linked to another user." });
-      return;
-    }
-    req.log.error({ err: error }, "Failed to complete Google sign-in");
-    res.status(500).json({ error: "Unable to sign in with Google right now." });
   }
 });
 

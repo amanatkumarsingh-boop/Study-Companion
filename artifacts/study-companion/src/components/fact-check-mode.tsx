@@ -3,21 +3,35 @@ import { useProcessFactCheck, getGetHistoryQueryKey } from '@workspace/api-clien
 import { useQueryClient } from '@tanstack/react-query';
 import { Loader2, Search, CheckCircle2, XCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { toast } from '@/hooks/use-toast';
 
 export function FactCheckMode() {
   const [claim, setClaim] = useState('');
   const processFactCheck = useProcessFactCheck();
   const queryClient = useQueryClient();
   const [result, setResult] = useState<any>(null);
+  const [isChecking, setIsChecking] = useState(false);
 
   const handleCheck = () => {
-    if (!claim.trim()) return;
+    if (!claim.trim() || isChecking) return;
     setResult(null);
-    processFactCheck.mutate({ data: { claim } }, {
+    setIsChecking(true);
+    processFactCheck.mutate({ data: { claim: claim.trim() } }, {
       onSuccess: (data) => {
         setResult(data.content);
         queryClient.invalidateQueries({ queryKey: getGetHistoryQueryKey() });
-      }
+      },
+      onError: (error) => {
+        setResult(null);
+        toast({
+          title: 'Fact check failed',
+          description: error instanceof Error
+            ? error.message
+            : 'The fact-check service could not complete your request. Please try again.',
+          variant: 'destructive',
+        });
+      },
+      onSettled: () => setIsChecking(false),
     });
   };
 
@@ -42,10 +56,10 @@ export function FactCheckMode() {
         </div>
         <button
           onClick={handleCheck}
-          disabled={!claim.trim() || processFactCheck.isPending}
+          disabled={!claim.trim() || isChecking}
           className="bg-primary text-primary-foreground px-8 py-4 rounded-full font-bold shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center min-w-[120px]"
         >
-          {processFactCheck.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Verify'}
+          {isChecking ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Verify'}
         </button>
       </div>
 

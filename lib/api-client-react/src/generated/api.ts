@@ -28,7 +28,6 @@ import type {
   DoubtResult,
   FactCheckInput,
   FactCheckResult,
-  GoogleAuthInput,
   HealthStatus,
   HistoryEntry,
   LoginInput,
@@ -283,77 +282,6 @@ export const useAuthLogin = <TError = ErrorType<ApiError>,
         TContext
       > => {
       return useMutation(getAuthLoginMutationOptions(options));
-    }
-
-export const getAuthGoogleUrl = () => {
-
-
-
-
-  return `/api/auth/google`
-}
-
-/**
- * @summary Sign in with a Google credential
- */
-export const authGoogle = async (googleAuthInput: GoogleAuthInput, options?: RequestInit): Promise<AuthResponse> => {
-
-  return customFetch<AuthResponse>(getAuthGoogleUrl(),
-  {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(googleAuthInput)
-  }
-);}
-
-
-
-
-
-export const getAuthGoogleMutationOptions = <TError = ErrorType<ApiError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authGoogle>>, TError,{data: BodyType<GoogleAuthInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof authGoogle>>, TError,{data: BodyType<GoogleAuthInput>}, TContext> => {
-
-const mutationKey = ['authGoogle'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof authGoogle>>, {data: BodyType<GoogleAuthInput>}> = (props) => {
-          const {data} = props ?? {};
-
-          return  authGoogle(data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type AuthGoogleMutationResult = NonNullable<Awaited<ReturnType<typeof authGoogle>>>
-    export type AuthGoogleMutationBody = BodyType<GoogleAuthInput>
-    export type AuthGoogleMutationError = ErrorType<ApiError>
-
-    /**
- * @summary Sign in with a Google credential
- */
-export const useAuthGoogle = <TError = ErrorType<ApiError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authGoogle>>, TError,{data: BodyType<GoogleAuthInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
- ): UseMutationResult<
-        Awaited<ReturnType<typeof authGoogle>>,
-        TError,
-        {data: BodyType<GoogleAuthInput>},
-        TContext
-      > => {
-      return useMutation(getAuthGoogleMutationOptions(options));
     }
 
 export const getAuthMeUrl = () => {

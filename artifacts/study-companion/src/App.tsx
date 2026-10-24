@@ -3,6 +3,7 @@ import { TooltipProvider } from '@radix-ui/react-tooltip';
 import Home from '@/pages/home';
 import { Route, Switch, Router as WouterRouter } from 'wouter';
 import { AuthProvider } from '@/contexts/auth-context';
+import { Toaster } from '@/components/ui/toaster';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -36,6 +37,7 @@ function App() {
           <WouterRouter base={import.meta.env.BASE_URL?.replace(/\/$/, '') || ''}>
             <Router />
           </WouterRouter>
+          <Toaster />
         </TooltipProvider>
       </AuthProvider>
     </QueryClientProvider>

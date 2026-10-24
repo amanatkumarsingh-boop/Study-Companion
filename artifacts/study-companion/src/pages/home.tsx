@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { ClassMode } from '@/components/class-mode';
 import { PrepMode } from '@/components/prep-mode';
 import { FactCheckMode } from '@/components/fact-check-mode';
 import { DoubtMode } from '@/components/doubt-mode';
@@ -7,19 +6,18 @@ import { HistoryFeed } from '@/components/history-feed';
 import { AuthModal } from '@/components/auth-modal';
 import { useAuth } from '@/contexts/auth-context';
 import { cn } from '@/lib/utils';
-import { BrainCircuit, Mic, BookOpen, ShieldCheck, HelpCircle, WifiOff, LogOut, UserRound } from 'lucide-react';
+import { BrainCircuit, BookOpen, ShieldCheck, HelpCircle, WifiOff, LogOut, UserRound } from 'lucide-react';
 
-type Mode = 'class' | 'prep' | 'factcheck' | 'doubt';
+type Mode = 'prep' | 'factcheck' | 'doubt';
 
-const TABS: { id: Mode; label: string; icon: typeof Mic; color: string; bg: string }[] = [
-  { id: 'class',     label: 'Class',      icon: Mic,         color: '#10B981', bg: '#10B98115' },
+const TABS: { id: Mode; label: string; icon: typeof BookOpen; color: string; bg: string }[] = [
   { id: 'prep',      label: 'Prep',       icon: BookOpen,    color: '#8B5CF6', bg: '#8B5CF615' },
   { id: 'factcheck', label: 'Fact Check', icon: ShieldCheck, color: '#06B6D4', bg: '#06B6D415' },
   { id: 'doubt',     label: 'Doubt',      icon: HelpCircle,  color: '#F59E0B', bg: '#F59E0B15' },
 ];
 
 export default function Home() {
-  const [mode, setMode] = useState<Mode>('class');
+  const [mode, setMode] = useState<Mode>('prep');
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const [offlineDismissed, setOfflineDismissed] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
@@ -52,7 +50,7 @@ export default function Home() {
           <div className="space-y-2">
             <h1 className="text-2xl font-bold tracking-tight">You're Offline</h1>
             <p className="text-sm text-muted-foreground max-w-xs leading-relaxed">
-              Please check your internet connection to continue using Class, Preparation, Fact Check, or Doubt modes.
+              Please check your internet connection to continue using Preparation, Fact Check, or Doubt modes.
             </p>
           </div>
           <button
@@ -141,7 +139,7 @@ export default function Home() {
             <div className="max-w-md space-y-2">
               <h2 className="text-xl font-bold">Your study space, saved to your account</h2>
               <p className="text-sm leading-relaxed text-muted-foreground">
-                Sign in to start a class, prepare notes, check a claim, or ask a doubt. Your activity and history stay private to your account.
+                Sign in to prepare notes, check a claim, or ask a doubt. Your activity and history stay private to your account.
               </p>
             </div>
             <button
@@ -155,7 +153,6 @@ export default function Home() {
         ) : (
           <>
             <section className="min-h-[400px]">
-              {mode === 'class' && <ClassMode />}
               {mode === 'prep' && <PrepMode />}
               {mode === 'factcheck' && <FactCheckMode />}
               {mode === 'doubt' && <DoubtMode />}
