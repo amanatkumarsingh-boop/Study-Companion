@@ -12,6 +12,8 @@ tags:
     description: Health operations
   - name: study
     description: Study companion operations
+  - name: auth
+    description: User authentication
 paths:
   /healthz:
     get:
@@ -27,12 +29,159 @@ paths:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
 
+  /auth/register:
+    post:
+      operationId: authRegister
+      tags: [auth]
+      summary: Register with email and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterInput"
+      responses:
+        "201":
+          description: Account created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Invalid registration data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "409":
+          description: An account already exists for this email
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /auth/login:
+    post:
+      operationId: authLogin
+      tags: [auth]
+      summary: Sign in with email and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginInput"
+      responses:
+        "200":
+          description: Signed in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Invalid login data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "401":
+          description: Invalid email or password
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /auth/google:
+    post:
+      operationId: authGoogle
+      tags: [auth]
+      summary: Sign in with a Google credential
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GoogleAuthInput"
+      responses:
+        "200":
+          description: Signed in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Invalid Google credential
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "503":
+          description: Google sign-in is not configured
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /auth/me:
+    get:
+      operationId: authMe
+      tags: [auth]
+      summary: Get the current user
+      security:
+        - studySession: []
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /auth/logout:
+    post:
+      operationId: authLogout
+      tags: [auth]
+      summary: Sign out
+      responses:
+        "200":
+          description: Signed out
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LogoutResponse"
+
   /class:
     post:
       operationId: processClass
       tags: [study]
       summary: Process class transcript
       description: Submit a live class transcript and receive AI-generated study materials
+      security:
+        - studySession: []
       requestBody:
         required: true
         content:
@@ -52,6 +201,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiError"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
         "500":
           description: Server error
           content:
@@ -65,6 +220,8 @@ paths:
       tags: [study]
       summary: Generate study notes from text
       description: Submit pasted text or transcript and receive AI-generated study notes and predicted exam questions
+      security:
+        - studySession: []
       requestBody:
         required: true
         content:
@@ -84,6 +241,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiError"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
         "500":
           description: Server error
           content:
@@ -97,6 +260,8 @@ paths:
       tags: [study]
       summary: Fact check a claim
       description: Verify whether a claim is true or false with explanation
+      security:
+        - studySession: []
       requestBody:
         required: true
         content:
@@ -116,6 +281,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiError"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
         "500":
           description: Server error
           content:
@@ -129,6 +300,8 @@ paths:
       tags: [study]
       summary: Answer a student doubt
       description: Submit a spoken or written doubt query in any language and receive a clear English answer
+      security:
+        - studySession: []
       requestBody:
         required: true
         content:
@@ -148,6 +321,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiError"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
         "500":
           description: Server error
           content:
@@ -161,6 +340,8 @@ paths:
       tags: [study]
       summary: Get recent logs
       description: Retrieve the most recent study session logs from the database
+      security:
+        - studySession: []
       responses:
         "200":
           description: History entries
@@ -176,9 +357,84 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiError"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
 
 components:
+  securitySchemes:
+    studySession:
+      type: apiKey
+      in: cookie
+      name: study_session
   schemas:
+    RegisterInput:
+      type: object
+      required: [email, password, name]
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+          minLength: 8
+          maxLength: 128
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+
+    LoginInput:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+          minLength: 1
+          maxLength: 128
+
+    GoogleAuthInput:
+      type: object
+      required: [credential]
+      properties:
+        credential:
+          type: string
+          minLength: 1
+
+    AuthUser:
+      type: object
+      required: [id, email, name, avatarUrl, createdAt]
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        name:
+          type: ["string", "null"]
+        avatarUrl:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+
+    AuthResponse:
+      type: object
+      required: [user]
+      properties:
+        user:
+          $ref: "#/components/schemas/AuthUser"
+
+    LogoutResponse:
+      type: object
+      required: [ok]
+      properties:
+        ok:
+          type: boolean
+
     HealthStatus:
       type: object
       properties:

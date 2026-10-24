@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TooltipProvider } from '@radix-ui/react-tooltip';
 import Home from '@/pages/home';
 import { Route, Switch, Router as WouterRouter } from 'wouter';
+import { AuthProvider } from '@/contexts/auth-context';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -30,11 +31,13 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL?.replace(/\/$/, '') || ''}>
-          <Router />
-        </WouterRouter>
-      </TooltipProvider>
+      <AuthProvider>
+        <TooltipProvider>
+          <WouterRouter base={import.meta.env.BASE_URL?.replace(/\/$/, '') || ''}>
+            <Router />
+          </WouterRouter>
+        </TooltipProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

@@ -1,15 +1,17 @@
 import { Router } from "express";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { db, logsTable } from "@workspace/db";
-import { desc } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import {
   ProcessClassBody,
   ProcessPrepBody,
   ProcessFactCheckBody,
   ProcessDoubtBody,
 } from "@workspace/api-zod";
+import { requireAuth } from "../middlewares/auth";
 
 const router = Router();
+router.use(requireAuth);
 
 if (!process.env.GEMINI_API_KEY) {
   throw new Error("GEMINI_API_KEY must be set.");
@@ -77,7 +79,11 @@ Transcript:
 ${transcript}`
     );
 
-    await db.insert(logsTable).values({ mode: "class", content });
+    await db.insert(logsTable).values({
+      userId: res.locals.authUserId,
+      mode: "class",
+      content,
+    });
     res.json({ content });
   } catch (err: unknown) {
     req.log.error({ err }, "Failed to process class transcript");
@@ -114,7 +120,11 @@ Text:
 ${text}`
     );
 
-    await db.insert(logsTable).values({ mode: "prep", content });
+    await db.insert(logsTable).values({
+      userId: res.locals.authUserId,
+      mode: "prep",
+      content,
+    });
     res.json({ content });
   } catch (err: unknown) {
     req.log.error({ err }, "Failed to generate study notes");
@@ -151,7 +161,12 @@ Claim: ${claim}`
     );
 
     const verdict = content.verdict === "CORRECT" ? "CORRECT" : "FALSE";
-    await db.insert(logsTable).values({ mode: "factcheck", content, verdict });
+    await db.insert(logsTable).values({
+      userId: res.locals.authUserId,
+      mode: "factcheck",
+      content,
+      verdict,
+    });
     res.json({ content });
   } catch (err: unknown) {
     req.log.error({ err }, "Failed to verify claim");
@@ -185,7 +200,11 @@ Return a clean JSON object containing exactly one key:
 Student's query: ${query}`
     );
 
-    await db.insert(logsTable).values({ mode: "doubt", content });
+    await db.insert(logsTable).values({
+      userId: res.locals.authUserId,
+      mode: "doubt",
+      content,
+    });
     res.json({ content });
   } catch (err: unknown) {
     req.log.error({ err }, "Failed to process doubt query");
@@ -199,6 +218,7 @@ router.get("/history", async (req, res) => {
     const rows = await db
       .select()
       .from(logsTable)
+      .where(eq(logsTable.userId, res.locals.authUserId))
       .orderBy(desc(logsTable.createdAt))
       .limit(20);
 

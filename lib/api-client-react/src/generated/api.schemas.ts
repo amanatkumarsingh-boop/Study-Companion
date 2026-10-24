@@ -5,6 +5,52 @@
  * AI Study Companion API
  * OpenAPI spec version: 0.1.0
  */
+export interface RegisterInput {
+  email: string;
+  /**
+     * @minLength 8
+     * @maxLength 128
+     */
+  password: string;
+  /**
+     * @minLength 1
+     * @maxLength 100
+     */
+  name: string;
+}
+
+export interface LoginInput {
+  email: string;
+  /**
+     * @minLength 1
+     * @maxLength 128
+     */
+  password: string;
+}
+
+export interface GoogleAuthInput {
+  /** @minLength 1 */
+  credential: string;
+}
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  /** @nullable */
+  name: string | null;
+  /** @nullable */
+  avatarUrl: string | null;
+  createdAt: string;
+}
+
+export interface AuthResponse {
+  user: AuthUser;
+}
+
+export interface LogoutResponse {
+  ok: boolean;
+}
+
 export interface HealthStatus {
   status: string;
 }

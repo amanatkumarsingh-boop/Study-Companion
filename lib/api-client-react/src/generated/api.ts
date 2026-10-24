@@ -21,16 +21,21 @@ import type {
 
 import type {
   ApiError,
+  AuthResponse,
   ClassInput,
   ClassResult,
   DoubtInput,
   DoubtResult,
   FactCheckInput,
   FactCheckResult,
+  GoogleAuthInput,
   HealthStatus,
   HistoryEntry,
+  LoginInput,
+  LogoutResponse,
   PrepInput,
-  PrepResult
+  PrepResult,
+  RegisterInput
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -137,6 +142,367 @@ export function useHealthCheck<TData = Awaited<ReturnType<typeof healthCheck>>, 
 
 
 
+
+export const getAuthRegisterUrl = () => {
+
+
+
+
+  return `/api/auth/register`
+}
+
+/**
+ * @summary Register with email and password
+ */
+export const authRegister = async (registerInput: RegisterInput, options?: RequestInit): Promise<AuthResponse> => {
+
+  return customFetch<AuthResponse>(getAuthRegisterUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(registerInput)
+  }
+);}
+
+
+
+
+
+export const getAuthRegisterMutationOptions = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authRegister>>, TError,{data: BodyType<RegisterInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof authRegister>>, TError,{data: BodyType<RegisterInput>}, TContext> => {
+
+const mutationKey = ['authRegister'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof authRegister>>, {data: BodyType<RegisterInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  authRegister(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AuthRegisterMutationResult = NonNullable<Awaited<ReturnType<typeof authRegister>>>
+    export type AuthRegisterMutationBody = BodyType<RegisterInput>
+    export type AuthRegisterMutationError = ErrorType<ApiError>
+
+    /**
+ * @summary Register with email and password
+ */
+export const useAuthRegister = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authRegister>>, TError,{data: BodyType<RegisterInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof authRegister>>,
+        TError,
+        {data: BodyType<RegisterInput>},
+        TContext
+      > => {
+      return useMutation(getAuthRegisterMutationOptions(options));
+    }
+
+export const getAuthLoginUrl = () => {
+
+
+
+
+  return `/api/auth/login`
+}
+
+/**
+ * @summary Sign in with email and password
+ */
+export const authLogin = async (loginInput: LoginInput, options?: RequestInit): Promise<AuthResponse> => {
+
+  return customFetch<AuthResponse>(getAuthLoginUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(loginInput)
+  }
+);}
+
+
+
+
+
+export const getAuthLoginMutationOptions = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authLogin>>, TError,{data: BodyType<LoginInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof authLogin>>, TError,{data: BodyType<LoginInput>}, TContext> => {
+
+const mutationKey = ['authLogin'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof authLogin>>, {data: BodyType<LoginInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  authLogin(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AuthLoginMutationResult = NonNullable<Awaited<ReturnType<typeof authLogin>>>
+    export type AuthLoginMutationBody = BodyType<LoginInput>
+    export type AuthLoginMutationError = ErrorType<ApiError>
+
+    /**
+ * @summary Sign in with email and password
+ */
+export const useAuthLogin = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authLogin>>, TError,{data: BodyType<LoginInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof authLogin>>,
+        TError,
+        {data: BodyType<LoginInput>},
+        TContext
+      > => {
+      return useMutation(getAuthLoginMutationOptions(options));
+    }
+
+export const getAuthGoogleUrl = () => {
+
+
+
+
+  return `/api/auth/google`
+}
+
+/**
+ * @summary Sign in with a Google credential
+ */
+export const authGoogle = async (googleAuthInput: GoogleAuthInput, options?: RequestInit): Promise<AuthResponse> => {
+
+  return customFetch<AuthResponse>(getAuthGoogleUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(googleAuthInput)
+  }
+);}
+
+
+
+
+
+export const getAuthGoogleMutationOptions = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authGoogle>>, TError,{data: BodyType<GoogleAuthInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof authGoogle>>, TError,{data: BodyType<GoogleAuthInput>}, TContext> => {
+
+const mutationKey = ['authGoogle'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof authGoogle>>, {data: BodyType<GoogleAuthInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  authGoogle(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AuthGoogleMutationResult = NonNullable<Awaited<ReturnType<typeof authGoogle>>>
+    export type AuthGoogleMutationBody = BodyType<GoogleAuthInput>
+    export type AuthGoogleMutationError = ErrorType<ApiError>
+
+    /**
+ * @summary Sign in with a Google credential
+ */
+export const useAuthGoogle = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authGoogle>>, TError,{data: BodyType<GoogleAuthInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof authGoogle>>,
+        TError,
+        {data: BodyType<GoogleAuthInput>},
+        TContext
+      > => {
+      return useMutation(getAuthGoogleMutationOptions(options));
+    }
+
+export const getAuthMeUrl = () => {
+
+
+
+
+  return `/api/auth/me`
+}
+
+/**
+ * @summary Get the current user
+ */
+export const authMe = async ( options?: RequestInit): Promise<AuthResponse> => {
+
+  return customFetch<AuthResponse>(getAuthMeUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getAuthMeQueryKey = () => {
+    return [
+    `/api/auth/me`
+    ] as const;
+    }
+
+
+export const getAuthMeQueryOptions = <TData = Awaited<ReturnType<typeof authMe>>, TError = ErrorType<ApiError>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof authMe>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getAuthMeQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof authMe>>> = ({ signal }) => authMe({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof authMe>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type AuthMeQueryResult = NonNullable<Awaited<ReturnType<typeof authMe>>>
+export type AuthMeQueryError = ErrorType<ApiError>
+
+
+/**
+ * @summary Get the current user
+ */
+
+export function useAuthMe<TData = Awaited<ReturnType<typeof authMe>>, TError = ErrorType<ApiError>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof authMe>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getAuthMeQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getAuthLogoutUrl = () => {
+
+
+
+
+  return `/api/auth/logout`
+}
+
+/**
+ * @summary Sign out
+ */
+export const authLogout = async ( options?: RequestInit): Promise<LogoutResponse> => {
+
+  return customFetch<LogoutResponse>(getAuthLogoutUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getAuthLogoutMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authLogout>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof authLogout>>, TError,void, TContext> => {
+
+const mutationKey = ['authLogout'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof authLogout>>, void> = () => {
+
+
+          return  authLogout(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AuthLogoutMutationResult = NonNullable<Awaited<ReturnType<typeof authLogout>>>
+
+    export type AuthLogoutMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Sign out
+ */
+export const useAuthLogout = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authLogout>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof authLogout>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getAuthLogoutMutationOptions(options));
+    }
 
 export const getProcessClassUrl = () => {
 

@@ -7,6 +7,8 @@
  */
 
 export * from './apiError';
+export * from './authResponse';
+export * from './authUser';
 export * from './classContent';
 export * from './classInput';
 export * from './classResult';
@@ -16,9 +18,13 @@ export * from './doubtResult';
 export * from './factCheckContent';
 export * from './factCheckInput';
 export * from './factCheckResult';
+export * from './googleAuthInput';
 export * from './healthStatus';
 export * from './historyContent';
 export * from './historyEntry';
+export * from './loginInput';
+export * from './logoutResponse';
 export * from './prepContent';
 export * from './prepInput';
 export * from './prepResult';
+export * from './registerInput';

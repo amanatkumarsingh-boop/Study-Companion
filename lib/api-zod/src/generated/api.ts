@@ -18,6 +18,99 @@ export const HealthCheckResponse = zod.object({
 
 
 /**
+ * @summary Register with email and password
+ */
+export const authRegisterBodyPasswordMin = 8;
+export const authRegisterBodyPasswordMax = 128;
+
+export const authRegisterBodyNameMax = 100;
+
+
+
+export const AuthRegisterBody = zod.object({
+  "email": zod.string(),
+  "password": zod.string().min(authRegisterBodyPasswordMin).max(authRegisterBodyPasswordMax),
+  "name": zod.string().min(1).max(authRegisterBodyNameMax)
+})
+
+export const AuthRegisterResponse = zod.object({
+  "user": zod.object({
+  "id": zod.string(),
+  "email": zod.string(),
+  "name": zod.string().nullable(),
+  "avatarUrl": zod.string().nullable(),
+  "createdAt": zod.coerce.date()
+})
+})
+
+
+/**
+ * @summary Sign in with email and password
+ */
+export const authLoginBodyPasswordMax = 128;
+
+
+
+export const AuthLoginBody = zod.object({
+  "email": zod.string(),
+  "password": zod.string().min(1).max(authLoginBodyPasswordMax)
+})
+
+export const AuthLoginResponse = zod.object({
+  "user": zod.object({
+  "id": zod.string(),
+  "email": zod.string(),
+  "name": zod.string().nullable(),
+  "avatarUrl": zod.string().nullable(),
+  "createdAt": zod.coerce.date()
+})
+})
+
+
+/**
+ * @summary Sign in with a Google credential
+ */
+
+
+
+export const AuthGoogleBody = zod.object({
+  "credential": zod.string().min(1)
+})
+
+export const AuthGoogleResponse = zod.object({
+  "user": zod.object({
+  "id": zod.string(),
+  "email": zod.string(),
+  "name": zod.string().nullable(),
+  "avatarUrl": zod.string().nullable(),
+  "createdAt": zod.coerce.date()
+})
+})
+
+
+/**
+ * @summary Get the current user
+ */
+export const AuthMeResponse = zod.object({
+  "user": zod.object({
+  "id": zod.string(),
+  "email": zod.string(),
+  "name": zod.string().nullable(),
+  "avatarUrl": zod.string().nullable(),
+  "createdAt": zod.coerce.date()
+})
+})
+
+
+/**
+ * @summary Sign out
+ */
+export const AuthLogoutResponse = zod.object({
+  "ok": zod.boolean()
+})
+
+
+/**
  * Submit a live class transcript and receive AI-generated study materials
  * @summary Process class transcript
  */
